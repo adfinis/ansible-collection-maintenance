@@ -1,0 +1,42 @@
+---
+
+maintenance_exclude_tasks: []
+
+linux_serverlogs_root_alias: serverlogs@example.org
+
+linux_allowed_ssh_authorized_keys: []
+
+linux_additional_ssh_authorized_keys: []
+
+linux_allowed_login_users:
+  - root
+  - adfinis
+
+linux_additional_allowed_login_users: []
+
+linux_allowed_login_ips: []
+
+linux_additional_allowed_login_ips: []
+
+
+# Use large_logfiles_prune to exclude large directory trees (e.g. userhomes, backup volumes, ...) from the search
+
+linux_large_logfiles_prune:
+  - /mnt
+
+linux_additional_large_logfiles_prune: []
+
+# ... and use allowed_large_files to exclude single files or small directories from the result
+
+# Matches start of path!
+linux_allowed_large_files:
+  - "/var/cache/apt/.*pkgcache.bin$"
+  - "/boot/vmlinuz"
+  - "/boot/initrd"
+  - "/boot/initramfs"
+  - "/var/lib/dirsrv/"
+  - "/var/log/journal/"
+  - "/var/lib/rpm/Packages$"
+  - "/var/cache/yum/"
+
+linux_additional_allowed_large_files: []

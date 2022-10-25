@@ -1,0 +1,77 @@
+---
+
+- name: This task only serves as a template for the tasks below
+  ansible.builtin.set_fact:
+    ignoreme: &task
+      name: "{{ vars.taskid }}: {{ vars.name }}"
+      register: task
+      when:
+        - "vars.taskid not in maintenance_exclude_tasks"
+        - "maintenance_only is not defined or maintenance_only == vars.taskid"
+  vars:
+    taskid: ignore-me
+    name: bar
+
+- name: Load release-specific variables
+  ansible.builtin.include_vars: "{{ item }}"
+  with_first_found:
+    - "rhel_{{ ansible_distribution_major_version }}.yml"
+
+- <<: *task
+  vars:
+    taskid: 15-010
+    name: "Does the system get updates (are the base repos enabled)"
+  check_mode: yes  # We only want to know about changes, not actually apply them
+  community.general.ini_file:  # noqa risky-file-permissions  only checking, not creating
+    path: /etc/yum.repos.d/local.repo
+    section: "{{ item }}"
+    option: enabled
+    value: '1'
+  loop: "{{ rhel_yum_repository_list }}"
+
+- <<: *task
+  vars:
+    taskid: 15-011
+    name: "Does yum check-update work"
+  args:
+    warn: false
+  ansible.builtin.command: "yum check-update -q"
+  register: yum_checkupdate_output
+  check_mode: no
+  changed_when: no
+  failed_when: "yum_checkupdate_output.stderr_lines | length > 0"
+
+- <<: *task
+  vars:
+    taskid: 15-011
+    name: "Does yum check-update work | Print new pkgs"
+  ansible.builtin.debug:
+    var: yum_checkupdate_output.stdout_lines
+  changed_when: no
+
+- <<: *task
+  vars:
+    taskid: 15-012
+    name: "Is selinux switched on"
+  check_mode: yes  # We only want to know about changes, not actually apply them
+  ansible.posix.selinux:
+    policy: targeted
+    state: enforcing
+
+- <<: *task
+  vars:
+    taskid: 15-013
+    name: "Scan the audit log for issues | gather logs"
+  ansible.builtin.command: ausearch -m AVC
+  register: audit_log_output
+  check_mode: no
+  changed_when: no
+  failed_when: "audit_log_output.rc not in [0, 1]"
+
+- <<: *task
+  vars:
+    taskid: 15-013
+    name: "Scan the audit log for issues | output"
+  ansible.builtin.debug:
+    var: "audit_log_output.stdout_lines"
+  changed_when: "audit_log_output.stdout_lines | length > 0"

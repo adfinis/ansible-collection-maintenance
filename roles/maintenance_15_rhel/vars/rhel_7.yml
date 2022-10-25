@@ -1,0 +1,4 @@
+---
+
+rhel_yum_repository_list:
+  - rhel-7-server-x86_64

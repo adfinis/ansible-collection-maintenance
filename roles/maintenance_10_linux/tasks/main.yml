@@ -1,0 +1,173 @@
+---
+
+- name: This task only serves as a template for the tasks below
+  ansible.builtin.set_fact:
+    ignoreme: &task
+      name: "{{ vars.taskid }}: {{ vars.name }}"
+      register: task
+      when:
+        - "vars.taskid not in maintenance_exclude_tasks"
+        - "maintenance_only is not defined or maintenance_only == vars.taskid"
+  vars:
+    taskid: ignore-me
+    name: bar
+
+
+- name: Gather local user accounts
+  ansible.builtin.getent:
+    database: passwd
+    service: files
+
+- <<: *task
+  vars:
+    taskid: 10-028
+    name: "Systemd: Check all important service units | Gather systemd unit facts"
+  ansible.builtin.service_facts: {}
+
+- <<: *task
+  vars:
+    taskid: 10-028
+    name: "Systemd: Check all important service units | Check for failed units"
+    failed_units: "{{ ansible_facts.services.items() | map(attribute=1) | selectattr('state', '==', 'failed') | map(attribute='name') | list }}"
+  ansible.builtin.debug:
+    var: failed_units
+  changed_when: "failed_units | length > 0"
+
+- <<: *task
+  vars:
+    taskid: 10-032
+    name: "Disk: Fstab: fstab correct? | Run mount -av --fake"
+  environment:
+    LC_ALL: C
+  ansible.builtin.shell: "mount -av --fake | grep -Ev ': (ignored)|(already mounted)'"  # noqa risky-shell-pipe mount --fake is permitted to fail
+  register: linux_mount_all
+  changed_when: no
+  check_mode: no
+  failed_when: "linux_mount_all.rc not in [0, 1]"
+
+- <<: *task
+  vars:
+    taskid: 10-032
+    name: "Disk: Fstab: fstab correct? | Report non-mounted file systems"
+  ansible.builtin.debug:
+    var: "linux_mount_all.stdout_lines"
+  changed_when: "linux_mount_all.stdout_lines | length > 0"
+
+- <<: *task
+  vars:
+    taskid: 10-034
+    name: "Disk: logrotate: Are there files in /var/log that are not rotated? | Find large files in /var/log"
+  ansible.builtin.find:
+    paths:
+      - /var/log
+    size: 16m
+    follow: yes
+  register: linux_large_logfiles
+  changed_when: no
+
+- <<: *task
+  vars:
+    taskid: 10-034
+    name: "Disk: logrotate: Are there files in /var/log that are not rotated? | Report large files in /var/log"
+  ansible.builtin.debug:
+    var: "linux_large_logfiles.files | map(attribute='path') | list"
+  changed_when: "linux_large_logfiles.matched > 0"
+
+- <<: *task
+  vars:
+    taskid: 10-035
+    name: "Are there logfiles outside /var/log that are not rotated? | Find large files outside /var/log"
+  adfinis.maintenance.find:
+    paths: "{{ ansible_mounts | map(attribute='mount') | list }}"
+    prune: "{{ linux_large_logfiles_prune + linux_additional_large_logfiles_prune }}"
+    xdev: yes
+    type: file
+    size: "+16M"
+    age: "-{{ 60 * 24 * 7 * 2 }}"  # two weeks
+    exclude: "{{ linux_allowed_large_files + linux_additional_allowed_large_files }}"
+
+- <<: *task
+  vars:
+    taskid: 10-039
+    name: "Logfiles: Does journald log to persistent storage? | Check storage option in journald config"
+  ansible.builtin.lineinfile:
+    path: /etc/systemd/journald.conf
+    regexp: '^[\\s^#]*Storage='
+    line: Storage=persistent
+  check_mode: yes
+
+- <<: *task
+  vars:
+    taskid: 10-039
+    name: "Logfiles: Does journald log to persistent storage? | Check age of system journal"
+  ansible.builtin.stat:
+    path: "/var/log/journal/{{ ansible_machine_id }}/system.journal"
+  register: linux_stat_system_journal
+  check_mode: yes
+
+- <<: *task
+  vars:
+    taskid: 10-039
+    name: "Logfiles: Does journald log to persistent storage? | Report age of system journal"
+  ansible.builtin.debug:
+    msg: >-
+      /var/log/journal/{{ ansible_machine_id }}/system.journal
+      {% if not linux_stat_system_journal.stat.exists -%}
+      does not exist
+      {% else -%}
+      was last modified {{ '%Y-%m-%d %H:%M:%S' | strftime(linux_stat_system_journal.stat.mtime) }}
+      {% endif %}
+  changed_when: "not linux_stat_system_journal.stat.exists or (ansible_date_time.epoch | int - linux_stat_system_journal.stat.mtime) > 3600 * 48"
+
+- <<: *task
+  vars:
+    taskid: 10-040
+    name: "Security: User: Are all created users documented in the wiki with password? | Gather local users with password login"
+  ansible.builtin.shell: |
+    set -o pipefail  # need the return code of grep, not of cut
+    grep '\\$' /etc/shadow | cut -d: -f1
+  changed_when: no
+  register: linux_shadow_users
+  failed_when: "linux_shadow_users.rc not in [0, 1]"
+
+- <<: *task
+  vars:
+    taskid: 10-040
+    name: "Security: User: Are all created users documented in the wiki with password? | Report local users with password login"
+  ansible.builtin.debug:
+    var: "linux_shadow_users.stdout_lines | difference(linux_allowed_login_users)"
+  changed_when: "linux_shadow_users.stdout_lines | difference(linux_allowed_login_users) | length > 0"
+
+- <<: *task
+  vars:
+    taskid: 10-041
+    name: "Security: Logins: Are there logins from suspicious hosts/users? | Gather past logins from `last` output"
+  adfinis.maintenance.lastlogins:
+    allowed_users: "{{ linux_allowed_login_users + linux_additional_allowed_login_users }}"
+    allowed_ips: "{{ linux_allowed_login_ips + linux_additional_allowed_login_ips }}"
+
+- <<: *task
+  vars:
+    taskid: 10-042
+    name: "Security: SSH keys: Check for unknown or outdated keys for root and all users"
+  adfinis.maintenance.audit_ssh_authorizedkeys:
+    allowed: "{{ linux_allowed_ssh_authorized_keys + linux_additional_ssh_authorized_keys }}"
+  check_mode: yes
+
+- <<: *task
+  vars:
+    taskid: 10-050
+    name: "Mail: serverlogs: Is serverlogs@ entered in /etc/aliases for root?"
+  ansible.builtin.lineinfile:
+    path: /etc/aliases
+    regexp: "^root:"
+    line: "root: {{ linux_serverlogs_root_alias }}"
+    insertbefore: EOF
+  check_mode: yes
+
+- <<: *task
+  vars:
+    taskid: 10-051
+    name: "Mail: aliases.db: Make sure /etc/aliases.db is up to date"
+  ansible.builtin.command: postalias /etc/aliases
+  changed_when: no  # only requires human interaction in case of errors

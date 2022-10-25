@@ -1,0 +1,26 @@
+---
+
+- name: This task only serves as a template for the tasks below
+  ansible.builtin.set_fact:
+    ignoreme: &task
+      name: "{{ vars.taskid }}: {{ vars.name }}"
+      register: task
+      when:
+        - "vars.taskid not in maintenance_exclude_tasks"
+        - "maintenance_only is not defined or maintenance_only == vars.taskid"
+  vars:
+    taskid: ignoreme
+    name: bar
+
+
+- <<: *task
+  # This is an example task
+  vars:
+    taskid: 00-000
+    name: "Example: This is an example task"
+  check_mode: yes  # We only want to know about changes, not actually apply them
+  ansible.builtin.lineinfile:
+    path: /etc/aliases
+    regexp: "^root:"
+    line: "root: serverlogs@example.org"
+    insertbefore: EOF

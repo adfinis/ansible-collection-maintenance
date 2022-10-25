@@ -1,0 +1,7 @@
+---
+
+skip_list:
+  # ansible-lint doesn't like the way we're templating task names
+  - name[template]
+  # When we use command, we do so because the corresponding module is insufficient
+  - command-instead-of-module
