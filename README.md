@@ -1,6 +1,6 @@
 # Ansible Collection - adfinis.maintenance
 
-![Pipeline](https://github.com/github/docs/actions/workflows/ansible-lint.yml/badge.svg)
+![Pipeline](https://github.com/adfinis/ansible-collection-maintenance/actions/workflows/ansible-lint.yml/badge.svg)
 
 This Ansible collection provides a framework to run maintenance tasks automatically against a host.
 
