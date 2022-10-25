@@ -55,9 +55,9 @@ Check out `roles/maintenance_*/defaults/main.yml` to see which options can be ov
 
 ```ini
 [defaults]
-display_skipped_hosts = no
-display_ok_hosts = no
-callbacks_enabled=report
+display_skipped_hosts=no
+display_ok_hosts=no
+callbacks_enabled=adfinis.maintenance.report
 duplicate_dict_key=ignore
 ```
 
