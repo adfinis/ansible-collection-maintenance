@@ -6,7 +6,7 @@
 
     - name: Apply checklists
       ansible.builtin.include_role:
-        name: "{{ checklist_group }}"
+        name: "adfinis.maintenance.{{ checklist_group }}"
       when: "inventory_hostname in groups[checklist_group]"
       loop: "{{ groups | map('regex_search', '^maintenance_[0-9]+_.*') | select | list }}"
       loop_control:
