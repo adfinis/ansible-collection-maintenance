@@ -126,6 +126,8 @@
   ansible.builtin.shell: |
     set -o pipefail  # need the return code of grep, not of cut
     grep '\\$' /etc/shadow | cut -d: -f1
+  args:
+    executable: /bin/bash  # -o pipefail is a bash feature
   changed_when: no
   register: linux_shadow_users
   failed_when: "linux_shadow_users.rc not in [0, 1]"
