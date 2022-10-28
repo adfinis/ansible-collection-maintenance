@@ -54,13 +54,13 @@ options:
     sshd:
         description: Path to the sshd binary
         required: false
-        default sshd
+        default: sshd
         type: str
 
 # Specify this value according to your collection
 # in format of namespace.collection.doc_fragment_name
-extends_documentation_fragment:
-    - adfinis.maintenance.audit_ssh_authorizedkeys
+#extends_documentation_fragment:
+#    - adfinis.maintenance.audit_ssh_authorizedkeys
 
 author:
     - Adfinis AG (@adfinis)

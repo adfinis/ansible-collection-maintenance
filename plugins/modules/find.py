@@ -58,8 +58,8 @@ options:
 
 # Specify this value according to your collection
 # in format of namespace.collection.doc_fragment_name
-extends_documentation_fragment:
-    - adfinis.maintenance.find
+#extends_documentation_fragment:
+#    - adfinis.maintenance.find
 
 author:
     - Adfinis AG (support@adfinis.com)

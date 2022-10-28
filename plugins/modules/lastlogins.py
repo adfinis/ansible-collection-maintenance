@@ -54,8 +54,8 @@ options:
 
 # Specify this value according to your collection
 # in format of namespace.collection.doc_fragment_name
-extends_documentation_fragment:
-    - adfinis.maintenance.lastlogins
+#extends_documentation_fragment:
+#    - adfinis.maintenance.lastlogins
 
 author:
     - Adfinis AG (support@adfinis.com)
