@@ -167,6 +167,8 @@
     insertbefore: EOF
   check_mode: yes
 
+# Note: This task is expected to fail if postfix is missing!
+# The correct fix is to either install postfix as per our linux system standard, or to exclude this task.
 - <<: *task
   vars:
     taskid: 10-051

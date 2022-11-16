@@ -11,6 +11,9 @@ It does so in a way that may be a bit counterintuitive for someone used to Ansib
 * Almost everything is executed in check mode - The exceptions are tasks that won't break anything.
 * Tasks that report `ok` can be considered completed - no human intervention is required.
 * Tasks that report `changed` or `failed` require human intervention.
+  * **NOTE: It is expected that tasks fail** if some critical prerequesite is not met.  Usually this is not a bug, and
+    the correct way to resolve the issue is to either fulfil the required prerequisite, or to exclude the failing task
+    (see `maintenance_exclude_tasks` below).
 
 The tasks to run are grouped into "checklists". By convention, each checklist is implemented in a separate role, e.g.:
 * The `maintenance_10_linux` role implements tasks common to most Linux systems
