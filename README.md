@@ -1,7 +1,7 @@
 # Ansible Collection - adfinis.maintenance
 
 [![License](https://img.shields.io/github/license/adfinis/ansible-collection-maintenance?style=flat-square)](https://github.com/adfinis/ansible-collection-maintenance/blob/main/LICENSE)
-[![Pipeline](https://img.shields.io/github/workflow/status/adfinis/ansible-collection-maintenance/Ansible%20Lint/main?style=flat-square)](https://github.com/adfinis/ansible-collection-maintenance/actions)
+[![Pipeline](https://img.shields.io/github/actions/workflow/status/adfinis/ansible-collection-maintenance/.github/workflows/ansible-lint.yml?branch=main&style=flat-square)](https://github.com/adfinis/ansible-collection-maintenance/actions)
 [![Ansible Galaxy](https://img.shields.io/badge/collection-adfinis.maintenance-informational?style=flat-square)](https://galaxy.ansible.com/adfinis/maintenance)
 <!--[![Ansible Galaxy](https://img.shields.io/ansible/collection/2059?style=flat-square)](https://galaxy.ansible.com/adfinis/maintenance)-->
 
