@@ -1,7 +1,7 @@
 # Ansible Collection - adfinis.maintenance
 
 [![License](https://img.shields.io/github/license/adfinis/ansible-collection-maintenance?style=flat-square)](https://github.com/adfinis/ansible-collection-maintenance/blob/main/LICENSE)
-[![Pipeline](https://img.shields.io/github/workflow/status/adfinis/ansible-collection-maintenance/Ansible%20Lint/main?style=flat-square)](https://github.com/adfinis/ansible-collection-maintenance/actions)
+[![Pipeline](https://img.shields.io/github/actions/workflow/status/adfinis/ansible-collection-maintenance/.github/workflows/ansible-lint.yml?branch=main&style=flat-square)](https://github.com/adfinis/ansible-collection-maintenance/actions)
 [![Ansible Galaxy](https://img.shields.io/badge/collection-adfinis.maintenance-informational?style=flat-square)](https://galaxy.ansible.com/adfinis/maintenance)
 <!--[![Ansible Galaxy](https://img.shields.io/ansible/collection/2059?style=flat-square)](https://galaxy.ansible.com/adfinis/maintenance)-->
 
@@ -67,6 +67,74 @@ callbacks_whitelist=adfinis.maintenance.report
 callbacks_enabled=adfinis.maintenance.report
 duplicate_dict_key=ignore
 ```
+
+
+## Example output
+
+Running the example playbook in `playbooks/playbook.yml` with the recommended settings above against a host that is in the `maintenance_10_linux` and `maintenance_11_debian` hostgroups will provide an output like this:
+
+```
+user@maintenancemaster:~/git/maintenance-test$ ansible-playbook -l debian01.example.org playbook.yml 
+
+PLAY [Run automated maintenance tasks] *****************************************************************************************************************************************************************************************************************************************************
+
+TASK [adfinis.maintenance.maintenance_10_linux : 10-041: Security: Logins: Are there logins from suspicious hosts/users? | Gather past logins from `last` output] **************************************************************************************************************************
+changed: [debian01.example.org]
+
+TASK [adfinis.maintenance.maintenance_10_linux : 10-042: Security: SSH keys: Check for unknown or outdated keys for root and all users] ****************************************************************************************************************************************************
+changed: [debian01.example.org]
+
+TASK [adfinis.maintenance.maintenance_11_debian : 11-016: dpkg status: Are there packages which do not have the dpkg status ii or hi? | Report matching packages] **************************************************************************************************************************
+changed: [debian01.example.org] => {
+    "debian_dpkg_status.stdout_lines": [
+        "rc  linux-image-5.10.0-9-amd64           5.10.70-1                      amd64        Linux 5.10 for 64-bit PCs (signed)"
+    ]
+}
+
+TASK [adfinis.maintenance.maintenance_11_debian : 11-017: apt: Simulate the package upgrade] ***********************************************************************************************************************************************************************************************
+changed: [debian01.example.org]
+
+PLAY RECAP *********************************************************************************************************************************************************************************************************************************************************************************
+debian01.example.org : ok=35   changed=4    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+
+debian01.example.org
+- [x] 10-028: Systemd: Check all important service units
+- [x] 10-032: Disk: Fstab: fstab correct?
+- [x] 10-034: Disk: logrotate: Are there files in /var/log that are not rotated?
+- [x] 10-035: Are there logfiles outside /var/log that are not rotated?
+- [x] 10-039: Logfiles: Does journald log to persistent storage?
+- [x] 10-040: Security: User: Are all created users documented in the wiki with password?
+- [ ] 10-041: Security: Logins: Are there logins from suspicious hosts/users?
+- [ ] 10-042: Security: SSH keys: Check for unknown or outdated keys for root and all users
+- [x] 10-050: Mail: serverlogs: Is serverlogs@ entered in /etc/aliases for root?
+- [x] 10-051: Mail: aliases.db: Make sure /etc/aliases.db is up to date
+- [x] ignoreme: bar
+- [x] 11-011: Security: Are the security updates in the sources.list?
+- [x] 11-012: Repository: Check if repository is set to release name (e.g. 'bullseye') and not to 'stable'
+- [x] 11-013: For old distributions, has the repository been moved to http://archive.debian.org/ already?
+- [x] 11-014: Update package lists and check for errors
+- [ ] 11-016: dpkg status: Are there packages which do not have the dpkg status ii or hi?
+- [ ] 11-017: apt: Simulate the package upgrade
+- [x] 11-019: apt: Remove obsolete packages
+- [x] 11-020: boot-config: Check boot configuration: keep bootloader up to date
+- [x] 10-061: Updates: Check if a major update is pending.
+```
+
+With the ansible.cfg settings above, tasks that completed with the status `ok` or `skipped` won't be displayed, instead only `changed` tasks are shown, getting you a clear report on that you should look at.
+
+If you want more detailed output, execute the playbook with the `--diff` option, example output:
+```
+TASK [adfinis.maintenance.maintenance_10_linux : 10-042: Security: SSH keys: Check for unknown or outdated keys for root and all users] ****************************************************************************************************************************************************
+--- before: authorized_keys (root)
++++ after: authorized_keys (root)
+@@ -1 +0,0 @@
+-ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCoquOVPUnXKNP25SQzdKpXKby2s1fDhZS/zllKW5zGMr+C9mnf7xMN+sB16yfXhQRCJGWjzjxNPl56lB9s4jV1lrFtDVEmGu+arv2eQa1cQJ6ggeOxhzfpbPVJh0T5cZg9XpuucJDTFceA/wN5eeWAIAQpzjeFTYn0obDjzSzoXsPiRZ35URCEF6R1/+6gj6WaosiGiCVUyyIK5vJLsbJCVsV+hSFmTrZfKIt33h+XcjKacfzGNsON++2B5m0EEvCy0= user@maintenancemaster
+
+changed: [debian01.example.org]
+```
+
+There is also a checklist summarising all tasks that were run but finished with either `ok` or `skipped`.
 
 
 ## License
