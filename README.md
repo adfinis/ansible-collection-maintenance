@@ -74,7 +74,7 @@ duplicate_dict_key=ignore
 Running the example playbook in `playbooks/playbook.yml` with the recommended settings above against a host that is in the `maintenance_10_linux` and `maintenance_11_debian` hostgroups will provide an output like this:
 
 ```
-user@maintenancemaster:~/git/maintenance-test$ ansible-playbook -l debian01* playbook.yml 
+user@maintenancemaster:~/git/maintenance-test$ ansible-playbook -l debian01.example.org playbook.yml 
 
 PLAY [Run automated maintenance tasks] *****************************************************************************************************************************************************************************************************************************************************
 
@@ -122,6 +122,17 @@ debian01.example.org
 ```
 
 With the ansible.cfg settings above, tasks that completed with the status `ok` or `skipped` won't be displayed, instead only `changed` tasks are shown, getting you a clear report on that you should look at.
+
+If you want more detailed output, execute the playbook with the `--diff` option, example output:
+```
+TASK [adfinis.maintenance.maintenance_10_linux : 10-042: Security: SSH keys: Check for unknown or outdated keys for root and all users] ****************************************************************************************************************************************************
+--- before: authorized_keys (root)
++++ after: authorized_keys (root)
+@@ -1 +0,0 @@
+-ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCoquOVPUnXKNP25SQzdKpXKby2s1fDhZS/zllKW5zGMr+C9mnf7xMN+sB16yfXhQRCJGWjzjxNPl56lB9s4jV1lrFtDVEmGu+arv2eQa1cQJ6ggeOxhzfpbPVJh0T5cZg9XpuucJDTFceA/wN5eeWAIAQpzjeFTYn0obDjzSzoXsPiRZ35URCEF6R1/+6gj6WaosiGiCVUyyIK5vJLsbJCVsV+hSFmTrZfKIt33h+XcjKacfzGNsON++2B5m0EEvCy0= user@maintenancemaster
+
+changed: [debian01.example.org]
+```
 
 There is also a checklist summarising all tasks that were run but finished with either `ok` or `skipped`.
 
