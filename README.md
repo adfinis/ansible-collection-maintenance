@@ -109,7 +109,6 @@ debian01.example.org
 - [ ] 10-042: Security: SSH keys: Check for unknown or outdated keys for root and all users
 - [x] 10-050: Mail: serverlogs: Is serverlogs@ entered in /etc/aliases for root?
 - [x] 10-051: Mail: aliases.db: Make sure /etc/aliases.db is up to date
-- [x] ignoreme: bar
 - [x] 11-011: Security: Are the security updates in the sources.list?
 - [x] 11-012: Repository: Check if repository is set to release name (e.g. 'bullseye') and not to 'stable'
 - [x] 11-013: For old distributions, has the repository been moved to http://archive.debian.org/ already?
