@@ -153,6 +153,10 @@ def run_module():
 
     last_logins = []
     bad_logins = []
+    # last -i shows 0.0.0.0 for local logins
+    allowed_ips = ['0.0.0.0']
+    if module.params['allowed_ips'] is not None:
+        allowed_ips.extend(module.params['allowed_ips'])
 
     for line in out.decode().splitlines():
         if line.startswith('reboot') or line[1:].startswith('tmp begins') or len(line) == 0:
@@ -168,7 +172,7 @@ def run_module():
             bad_logins.append(line)
         elif module.params['forbidden_users'] is not None and user in module.params['forbidden_users']:
             bad_logins.append(line)
-        elif module.params['allowed_ips'] is not None and ip not in module.params['allowed_ips']:
+        elif module.params['allowed_ips'] is not None and ip not in allowed_ips:
             bad_logins.append(line)
         elif module.params['forbidden_ips'] is not None and ip in module.params['forbidden_ips']:
             bad_logins.append(line)
