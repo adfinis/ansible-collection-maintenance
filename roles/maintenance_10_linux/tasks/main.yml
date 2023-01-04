@@ -18,6 +18,9 @@
     database: passwd
     service: files
 
+- name: Gather package facts
+  ansible.builtin.package_facts: {}
+
 - <<: *task
   vars:
     taskid: 10-028
@@ -165,13 +168,14 @@
     regexp: "^root:"
     line: "root: {{ linux_serverlogs_root_alias }}"
     insertbefore: EOF
+  when: "'postfix' in ansible_facts.packages"
   check_mode: yes
 
-# Note: This task is expected to fail if postfix is missing!
-# The correct fix is to either install postfix as per our linux system standard, or to exclude this task.
 - <<: *task
   vars:
     taskid: 10-051
     name: "Mail: aliases.db: Make sure /etc/aliases.db is up to date"
-  ansible.builtin.command: postalias /etc/aliases
-  changed_when: no  # only requires human interaction in case of errors
+  ansible.builtin.shell: "[ -f /etc/aliases ] && postalias /etc/aliases || exit 2"
+  when: "'postfix' in ansible_facts.packages"
+  changed_when: "task.rc == 2"  # rc == 2 => file doesn't exist
+  failed_when: "task.rc == 1"  # rc == 1 => postalias failed
