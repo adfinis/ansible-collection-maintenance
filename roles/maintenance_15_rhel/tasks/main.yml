@@ -15,7 +15,7 @@
 - name: Load release-specific variables
   ansible.builtin.include_vars: "{{ item }}"
   with_first_found:
-    - "rhel_{{ ansible_distribution_major_version }}.yml"
+    - "rhel_{{ ansible_facts.distribution_major_version }}.yml"
 
 - <<: *task
   vars:
