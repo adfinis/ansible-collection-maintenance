@@ -15,7 +15,7 @@
 - name: Load release-specific variables
   ansible.builtin.include_vars: "{{ item }}"
   with_first_found:
-    - "debian_{{ ansible_distribution_major_version }}.yml"
+    - "debian_{{ ansible_facts.distribution_major_version }}.yml"
 
 
 - <<: *task
@@ -44,7 +44,7 @@
   ansible.builtin.replace:
     path: "{{ item.1 }}"
     regexp: "(://[^\\s]+\\s+){{ item.0 }}\\b"
-    replace: "\\1{{ ansible_distribution_release }}"
+    replace: "\\1{{ ansible_facts.distribution_release }}"
   with_nested:
     - [stable, oldstable, oldoldstable]
     - "{{ ['/etc/apt/sources.list'] + (debian_sources_list_files.files | map(attribute='path') | list) }}"
@@ -54,7 +54,7 @@
     taskid: 11-013
     name: "For old distributions, has the repository been moved to http://archive.debian.org/ already? | Test archive.debian.org"
   ansible.builtin.uri:
-    url: "http://archive.debian.org/debian/dists/{{ ansible_distribution_release }}/Release"
+    url: "http://archive.debian.org/debian/dists/{{ ansible_facts.distribution_release }}/Release"
     method: HEAD
     status_code: [200, 404]
   register: debian_archive_repo_url
@@ -66,8 +66,8 @@
     name: "For old distributions, has the repository been moved to http://archive.debian.org/ already? | grep sources.list"
   ansible.builtin.lineinfile:
     path: /etc/apt/sources.list
-    line: "deb http://archive.debian.org/debian/ {{ ansible_distribution_release }} main contrib non-free"
-    regexp: "^\\s+deb[^-].*\\s+http://archive.debian.org/debian/?\\s+{{ ansible_distribution_release }}\\s+.*$"
+    line: "deb http://archive.debian.org/debian/ {{ ansible_facts.distribution_release }} main contrib non-free"
+    regexp: "^\\s+deb[^-].*\\s+http://archive.debian.org/debian/?\\s+{{ ansible_facts.distribution_release }}\\s+.*$"
   # Even though this task runs all the time, the second changed_when rule causes it to only report a diff if running
   # on a distribution actually present on archive.debian.org.  Since the task is running in check mode, it doesn't do any
   # damage on non-archived distros, but won't report as changed.
@@ -151,5 +151,5 @@
     name: "Updates: Check if a major update is pending. | Check release name against stable"
   ansible.builtin.command: distro-info --stable
   changed_when:
-    - "ansible_distribution_release != 'testing'"
-    - "ansible_distribution_release not in task.stdout_lines"
+    - "ansible_facts.distribution_release != 'testing'"
+    - "ansible_facts.distribution_release not in task.stdout_lines"

@@ -66,6 +66,7 @@ display_ok_hosts=no
 callbacks_whitelist=adfinis.maintenance.report
 callbacks_enabled=adfinis.maintenance.report
 duplicate_dict_key=ignore
+inject_facts_as_vars=no
 ```
 
 
