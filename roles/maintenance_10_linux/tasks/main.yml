@@ -158,7 +158,9 @@
     regexp: "^root:"
     line: "root: {{ linux_serverlogs_root_alias }}"
     insertbefore: EOF
-  when: "'postfix' in ansible_facts.packages"
+  when:
+    - "'postfix' in ansible_facts.packages"
+    - "vars.taskid not in maintenance_exclude_tasks"
   check_mode: yes
 
 - <<: *task
