@@ -76,6 +76,9 @@
     name: "Disk: logrotate: Are there files in /var/log that are not rotated? | Stat found files in /var/log"
   ansible.builtin.stat:
     path: "{{ item }}"
+    get_attributes: no
+    get_checksum: no
+    get_mime: no
   loop: "{{ linux_large_logfiles.files | map(attribute='path') | list }}"
   register: linux_large_logfiles_stat
   changed_when: no
