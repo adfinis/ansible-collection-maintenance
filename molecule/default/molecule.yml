@@ -8,17 +8,41 @@ driver:
 platforms:
   - name: debian10
     image: debian:10
+    groups:
+      - debian
   - name: debian11
     image: debian:11
+    groups:
+      - debian
   - name: centos8
     image: quay.io/centos/centos:stream8
+    groups:
+      - centos
   - name: centos9
     image: quay.io/centos/centos:stream9
+    groups:
+      - centos
 
 provisioner:
   name: ansible
+  inventory:
+    group_vars:
+      centos:
+        ansible_distribution: "CentOS"
+      debian:
+        ansible_distribution: "Debian"
   env:
     ANSIBLE_ROLES_PATH: "../../roles"
+  config_options:
+    defaults:
+      retry_files_enabled: false
+      display_skipped_hosts: false
+      display_ok_hosts: false
+      callback_whitelist: "adfinis.maintenance.report"
+      callbacks_enabled: "adfinis.maintenance.report"
+      duplicate_dict_key: ignore
+      inject_facts_as_vars: false
+
 
 scenario:
   test_sequence:
