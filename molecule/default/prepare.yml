@@ -1,0 +1,11 @@
+---
+
+- name: Prepare debian vm for tests to succeed
+  hosts: all
+  tasks:
+    - name: Create aliases file
+      lineinfile:
+        line: "root: serverlogs@tux42.ch"
+        dest: /etc/aliases
+        state: present
+        create: true

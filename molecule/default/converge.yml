@@ -1,0 +1,23 @@
+---
+- name: all tasks
+  hosts: all
+  gather_facts: true
+  vars:
+    maintenance_exclude_tasks:
+    - 10-051 # TODO: remove these!
+    - 10-028
+    - 10-032
+    - 10-039
+    - 10-041
+    - 10-042
+  tasks:
+    - name: "Include 10_linux/"
+      include_role:
+        name: "maintenance_10_linux/"
+      register: my_role
+      ignore_errors: True
+
+    - name: "Output variable"
+      ansible.builtin.debug:
+        var: my_role
+      failed_when: x.rc = 0

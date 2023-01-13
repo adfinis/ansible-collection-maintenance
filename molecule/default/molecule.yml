@@ -1,0 +1,38 @@
+---
+dependency:
+  name: galaxy
+
+driver:
+  name: docker
+
+platforms:
+  - name: debian10
+    image: debian:10
+  - name: debian11
+    image: debian:11
+  - name: centos8
+    image: quay.io/centos/centos:stream8
+  - name: centos9
+    image: quay.io/centos/centos:stream9
+
+provisioner:
+  name: ansible
+  env:
+    ANSIBLE_ROLES_PATH: "../../roles"
+
+scenario:
+  test_sequence:
+    - dependency
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    - prepare
+    - converge
+    - idempotence
+    #- verify # TODO
+    - destroy
+
+verifier:
+  name: ansible
