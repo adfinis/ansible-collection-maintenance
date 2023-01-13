@@ -4,7 +4,7 @@
   hosts: all
   tasks:
     - name: Create aliases file
-      lineinfile:
+      ansible.builtin.lineinfile:
         line: "root: serverlogs@tux42.ch"
         dest: /etc/aliases
         state: present

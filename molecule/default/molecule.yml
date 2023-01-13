@@ -31,7 +31,7 @@ scenario:
     - prepare
     - converge
     - idempotence
-    #- verify # TODO
+    # - verify # TODO
     - destroy
 
 verifier:
