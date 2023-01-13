@@ -1,0 +1,22 @@
+---
+- name: Install packages
+  ansible.builtin.yum:
+    name:
+      - ansible-core
+      - selinux-policy
+      - python3-libselinux
+      - hostname
+      - openssh-server
+      - audit
+    state: installed
+
+- name: Create SSH keys
+  ansible.builtin.command:
+    cmd: "ssh-keygen -A"
+    creates: /etc/ssh/ssh_host_rsa_key
+
+- name: Create wtmp
+  ansible.builtin.file:
+    path: /var/log/wtmp
+    state: file
+

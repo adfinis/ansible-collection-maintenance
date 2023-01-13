@@ -1,0 +1,40 @@
+---
+- name: Install packages
+  ansible.builtin.apt:
+    name:
+      - python3-pip
+      - python3-apt
+      - openssh-server
+    state: present
+    update_cache: true
+
+# Bullseye delivers Ansible 2.10 which is too old for
+# ansible-collection-maintenance
+# To keep effort low, we take the package through pip
+
+- name: Upgrade pip
+  ansible.builtin.command:
+    cmd: "pip3 install --upgrade pip"
+    creates: /usr/local/bin/pip
+
+- name: Install Ansible
+  ansible.builtin.command:
+    cmd: "pip install ansible"
+    creates: /usr/local/bin/ansible
+
+- name: SSH working directory
+  ansible.builtin.file:
+    path: /run/sshd
+    state: directory
+    mode: 0755
+    owner: root
+    group: root
+
+- name: Security repo
+  ansible.builtin.copy:
+    src: bullseye/etc/apt/sources.list.d/security_debian_org_debian_security.list
+    dest: /etc/apt/sources.list.d/security_debian_org_debian_security.list
+    mode: "0755"
+    owner: root
+    group: root
+

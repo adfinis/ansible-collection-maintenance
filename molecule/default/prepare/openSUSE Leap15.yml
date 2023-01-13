@@ -1,0 +1,35 @@
+---
+- name: Install packages
+  community.general.zypper:
+    name:
+      - python3-pip
+      - python3-rpm
+      - hostname
+      - openssh-server
+    state: installed
+    disable_gpg_check: true
+
+# SUSE 12  delivers Ansible 2.9 which is too old for
+# ansible-collection-maintenance
+# To keep effort low, we take the package through pip
+
+- name: Upgrade pip
+  ansible.builtin.command:
+    cmd: "pip3 install --upgrade pip"
+    creates: /usr/bin/pip3.6
+
+- name: Install Ansible
+  ansible.builtin.command:
+    cmd: "pip3.6 install ansible"
+    creates: /usr/bin/ansible
+
+- name: Create wtmp
+  ansible.builtin.file:
+    path: /var/log/wtmp
+    type: file
+    state: present
+
+- name: Create SSH keys
+  ansible.builtin.command:
+    cmd: "ssh-keygen -A"
+    creates: /etc/ssh/ssh_host_rsa_key

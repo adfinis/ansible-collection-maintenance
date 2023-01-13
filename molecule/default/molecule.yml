@@ -7,19 +7,27 @@ driver:
 
 platforms:
   - name: debian10
-    image: debian:10
+    image: debian:buster
     groups:
       - debian
   - name: debian11
-    image: debian:11
+    image: debian:bullseye
     groups:
       - debian
+  - name: centos7
+    image: centos:7
+    groups:
+      - centos
   - name: centos8
     image: quay.io/centos/centos:stream8
     groups:
       - centos
   - name: centos9
     image: quay.io/centos/centos:stream9
+    groups:
+      - centos
+  - name: suse15
+    image: registry.opensuse.org/opensuse/leap:15
     groups:
       - centos
 

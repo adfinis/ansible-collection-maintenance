@@ -1,11 +1,23 @@
 ---
 
-- name: Prepare debian vm for tests to succeed
+- name: Prepare hosts
   hosts: all
   tasks:
-    - name: Create aliases file
-      ansible.builtin.lineinfile:
-        line: "root: serverlogs@tux42.ch"
-        dest: /etc/aliases
-        state: present
-        create: true
+    - name: Fetch package index
+      ansible.builtin.raw: apt-get update
+      when: '"maintain-debian" in inventory_hostname'
+
+    - name: Install python
+      ansible.builtin.raw: apt-get install -y python3
+      when: '"maintain-debian" in inventory_hostname'
+
+    - name: Install python
+      ansible.builtin.raw: zypper install -y python3
+      when: '"maintain-suse" in inventory_hostname'
+
+    - name: Gather facts
+      ansible.builtin.setup:
+
+    - name: Prepare container
+      ansible.builtin.include_tasks:
+        file: "prepare/{{ ansible_facts.distribution }}{{ ansible_facts.distribution_major_version }}.yml"
