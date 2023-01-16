@@ -34,4 +34,3 @@
   ansible.builtin.command:
     cmd: "ssh-keygen -A"
     creates: /etc/ssh/ssh_host_rsa_key
-
