@@ -3,7 +3,6 @@ name: Ansible Molecule
 
 on:
   pull_request:
-  push:
 
 jobs:
   lint:
