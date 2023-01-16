@@ -18,6 +18,29 @@ jobs:
       - lint
     runs-on: ubuntu-20.04
     strategy:
+      matrix:
+        config:
+          - name: "maintain-debian"
+            image: "debian"
+            tag: "bullseye"
+          - name: "maintain-debian"
+            image: "debian"
+            tag: "buster"
+          - name: "maintain-rhel"
+            image: "centos"
+            tag: "7"
+          - name: "maintain-rhel"
+            image: "centos"
+            namespace: "quay.io/centos/"
+            tag: "stream8"
+          - name: "maintain-rhel"
+            image: "centos"
+            namespace: "quay.io/centos/"
+            tag: "stream9"
+          - name: "maintain-suse"
+            image: "leap"
+            namespace: "registry.opensuse.org/opensuse/"
+            tag: "15"
       fail-fast: false
     steps:
       - name: checkout
@@ -30,3 +53,8 @@ jobs:
         run: sudo apparmor_parser -R /etc/apparmor.d/usr.sbin.mysqld
       - name: molecule
         uses: robertdebock/molecule-action@5.0.0
+        with:
+          name: ${{ matrix.config.name }}
+          image: ${{ matrix.config.image }}
+          tag: ${{ matrix.config.tag }}
+          namespace: ${{ matrix.config.namespace }}

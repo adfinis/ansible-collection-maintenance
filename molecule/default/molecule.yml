@@ -6,39 +6,11 @@ driver:
   name: docker
 
 platforms:
-  - name: debian10
-    image: debian:buster
-    groups:
-      - debian
-  - name: debian11
-    image: debian:bullseye
-    groups:
-      - debian
-  - name: centos7
-    image: centos:7
-    groups:
-      - centos
-  - name: centos8
-    image: quay.io/centos/centos:stream8
-    groups:
-      - centos
-  - name: centos9
-    image: quay.io/centos/centos:stream9
-    groups:
-      - centos
-  - name: suse15
-    image: registry.opensuse.org/opensuse/leap:15
-    groups:
-      - centos
+  - name: "${name}-${image:-debian10}-${tag:-latest}"
+    image: "${namespace}${image}:${tag:-latest}"
 
 provisioner:
   name: ansible
-  inventory:
-    group_vars:
-      centos:
-        ansible_distribution: "CentOS"
-      debian:
-        ansible_distribution: "Debian"
   env:
     ANSIBLE_ROLES_PATH: "../../roles"
   config_options:
@@ -46,7 +18,6 @@ provisioner:
       retry_files_enabled: false
       display_skipped_hosts: false
       display_ok_hosts: false
-      callback_whitelist: "adfinis.maintenance.report"
       callbacks_enabled: "adfinis.maintenance.report"
       duplicate_dict_key: ignore
       inject_facts_as_vars: false
