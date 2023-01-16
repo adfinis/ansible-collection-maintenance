@@ -20,11 +20,9 @@
     - name: "Include 11_debian/"
       ansible.builtin.include_role:
         name: "maintenance_11_debian"
-      when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+      when: '"maintain-debian" in inventory_hostname'
 
     - name: "Include 15_rhel/"
       ansible.builtin.include_role:
         name: "maintenance_15_rhel"
-      when: |
-        ansible_distribution == 'CentOS' or ansible_distribution == 'Red hat Enterprise Linux'
-        or ansible_distribution == 'SLES'
+      when: '"maintain-rhel" in inventory_hostname or "maintain-suse" in inventory_hostname'

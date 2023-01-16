@@ -6,7 +6,7 @@ driver:
   name: docker
 
 platforms:
-  - name: "${name}-${image:-debian10}-${tag:-latest}"
+  - name: "${host-prefix}-${image:-debian10}-${tag:-latest}"
     image: "${namespace}${image}:${tag:-latest}"
 
 provisioner:
@@ -16,8 +16,6 @@ provisioner:
   config_options:
     defaults:
       retry_files_enabled: false
-      display_skipped_hosts: false
-      display_ok_hosts: false
       callbacks_enabled: "adfinis.maintenance.report"
       duplicate_dict_key: ignore
       inject_facts_as_vars: false
