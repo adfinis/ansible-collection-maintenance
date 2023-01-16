@@ -3,6 +3,7 @@
   ansible.builtin.apt:
     name:
       - openssh-server
+      - postfix
     state: present
     update_cache: true
 

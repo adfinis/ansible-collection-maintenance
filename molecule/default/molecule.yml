@@ -6,7 +6,7 @@ driver:
   name: docker
 
 platforms:
-  - name: "${host-prefix}-${image:-debian10}-${tag:-latest}"
+  - name: "${host_prefix}-${image:-debian10}-${tag:-latest}"
     image: "${namespace}${image}:${tag:-latest}"
 
 provisioner:
@@ -29,10 +29,8 @@ scenario:
     - create
     - prepare
     - converge
-    - prepare
-    - converge
+    # TODO: - side-effects
     - idempotence
-    # - verify # TODO
     - destroy
 
 verifier:
