@@ -2,9 +2,7 @@
 - name: Install packages
   ansible.builtin.yum:
     name:
-      - ansible-core
       - selinux-policy
-      - python3-libselinux
       - hostname
       - openssh-server
       - audit
