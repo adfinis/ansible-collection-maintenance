@@ -9,7 +9,7 @@ platforms:
   - name: "${image:-debian10}-${tag:-latest}"
     image: "${namespace}${image:-debian10}:${tag:-latest}"
     privileged: yes
-      #    pre_build_image: yes
+    pre_build_image: yes
 
 provisioner:
   name: ansible
