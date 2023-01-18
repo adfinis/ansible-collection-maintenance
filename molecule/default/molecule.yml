@@ -6,8 +6,10 @@ driver:
   name: docker
 
 platforms:
-  - name: "${host_prefix}-${image:-debian10}-${tag:-latest}"
-    image: "${namespace}${image}:${tag:-latest}"
+  - name: "${image:-debian10}-${tag:-latest}"
+    image: "${namespace}${image:-debian10}:${tag:-latest}"
+    privileged: yes
+      #    pre_build_image: yes
 
 provisioner:
   name: ansible
