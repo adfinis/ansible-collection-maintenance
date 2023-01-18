@@ -8,6 +8,12 @@ linux_allowed_ssh_authorized_keys: []
 
 linux_additional_ssh_authorized_keys: []
 
+linux_allowed_ssh_nss_backends:
+  - files
+  - compat
+  - db
+  - systemd
+
 linux_allowed_login_users:
   - root
 
