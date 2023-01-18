@@ -46,6 +46,11 @@ options:
         required: false
         default: []
         type: list
+    limit_nss_backends:
+        description: Only retrieve users from these NSS backends, and emit a warning if other backends are configured.
+        required: false
+        default: [files, compat, db, systemd]
+        type: list
     config:
         description: Path to the sshd config fille
         required: false
@@ -73,6 +78,13 @@ EXAMPLES = r'''
     allowed:
       - 'from="2001:db8::42/128" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKBIpR/ccV9KAL5eoyPaT0frG1+moHO2nM2TsRKrdANU root@backup.example.org'
       - 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICZWKDPix+uTd+P+ZdoD3AkrD8cfikji9JKzvrfhczMA'
+
+- name: The same, but also check users from sssd (use with caution if your domain contains a large number of users)
+  adfinis.maintenance.audit_ssh_authorizedkeys:
+    allowed:
+      - 'from="2001:db8::42/128" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKBIpR/ccV9KAL5eoyPaT0frG1+moHO2nM2TsRKrdANU root@backup.example.org'
+      - 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICZWKDPix+uTd+P+ZdoD3AkrD8cfikji9JKzvrfhczMA'
+    limit_nss_backends: [files, compat, db, systemd, sss]
 '''
 
 
@@ -89,10 +101,15 @@ authorized_keys:
 
 from ansible.module_utils.basic import AnsibleModule
 
+import collections
 import os
 import pwd
 import subprocess
 import shlex
+
+
+# pwdent class conforming to https://docs.python.org/3/library/pwd.html
+GetentPwdEnt = collections.namedtuple('pwdent', ['pw_name', 'pw_passwd', 'pw_uid', 'pw_gid', 'pw_gecos', 'pw_dir', 'pw_shell'])
 
 
 def run_module():
@@ -105,6 +122,7 @@ def run_module():
         required=dict(type='list', required=False, default=[]),
         allowed=dict(type='list', required=False, default=[]),
         forbidden=dict(type='list', required=False, default=[]),
+        limit_nss_backends=dict(type='list', required=False, default=['files', 'compat', 'db', 'systemd'])
     )
 
     # seed the result dict in the object
@@ -125,18 +143,42 @@ def run_module():
         supports_check_mode=True,
     )
 
+    warnings = []
+
+    getent_backends = []
+    # Check NSS passwd db backends against list of limited backends, and emit warnings if additional backends are present
+    with open('/etc/nsswitch.conf', 'r') as nssf:
+        for line in nssf.readlines():
+            line = line.split('#', 1)[0].strip()
+            if not line:
+                continue
+            db, *backends = line.split()
+            if db != 'passwd:':
+                continue
+            for backend in backends:
+                if backend in module.params['limit_nss_backends']:
+                    getent_backends.append(backend)
+                else:
+                    msg = 'Users from the NSS passwd backend "{}" are excluded from this check. '.format(backend) + \
+                        'Please audit manually or include the backend in limit_nss_backends'
+                    warnings.append(msg)
+
     # Get user homes
-    users = []
+    users = set()
     if module.params['user'] is not None:
         user = module.params['user']
         try:
             pwdent = pwd.getpwnam(user)
-            users.append(pwdent)
+            users.add(pwdent)
         except KeyError:
             module.fail_json(msg='User {} does not exist'.format(user), **result)
     else:
-        for pwdent in pwd.getpwall():
-            users.append(pwdent)
+        # getpwnam/getpwall don't allow filtering by backends, need to user getent
+        for backend in getent_backends:
+            getent = subprocess.Popen(['/usr/bin/getent', 'passwd', '-s', backend], stdout=subprocess.PIPE)
+            getent_stdout, _ = getent.communicate()
+            for line in getent_stdout.decode().splitlines():
+                users.add(GetentPwdEnt(*line.split(':', 6)))
 
     # Read the acutal ssh authorized_keys
     result['authorized_keys'] = {}
@@ -148,18 +190,20 @@ def run_module():
             authorized_keys_paths = [module.params['file']]
         else:
             ufilter = 'host=,addr=,user=' + pwdent.pw_name  # host and addr are required by some implementations
-            sshd_cmdline = [module.params['sshd'], '-C', ufilter , '-T', '-f', module.params['config']]
+            sshd_cmdline = [module.params['sshd'], '-C', ufilter, '-T', '-f', module.params['config']]
             sshd_configtest = subprocess.Popen(sshd_cmdline, stdout=subprocess.PIPE)
             sshd_stdout, _ = sshd_configtest.communicate()
             if sshd_configtest.returncode != 0:
                 module.fail_json(msg='SSHD configuration invalid (or insufficient privileges, try become_user=root become=yes)', **result)
 
             for cline in sshd_stdout.decode().splitlines():
-                conf = cline.split()
-                if conf[0] != 'authorizedkeysfile':
-                    continue
-                authorized_keys_paths = conf[1:]
-                
+                conf = cline.split(maxsplit=1)
+                if conf[0] == 'authorizedkeyscommand' and conf[1] != 'none':
+                    msg = 'AuthorizedKeysCommand is configured: "{}". Keys returned by this command are not audited.'.format(conf[1])
+                    warnings.append(msg)
+                elif conf[0] == 'authorizedkeysfile':
+                    authorized_keys_paths = conf[1].split()
+
         if authorized_keys_paths is None:
             authorized_keys_paths = []
 
@@ -227,13 +271,13 @@ def run_module():
                 'after_header': 'authorized_keys ({})'.format(user),
             })
 
-    if len(violations) > 0:
+    if len(violations) > 0 or len(warnings) > 0:
         result['changed'] = True
         if not module.check_mode:
-            module.fail_json(msg=violations, **result)
+            module.fail_json(warnings=warnings, msg=violations, **result)
     # in the event of a successful module execution, you will want to
     # simple AnsibleModule.exit_json(), passing the key/value results
-    module.exit_json(**result)
+    module.exit_json(warnings=warnings, **result)
 
 
 def main():
