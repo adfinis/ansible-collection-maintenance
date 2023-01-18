@@ -38,7 +38,7 @@ jobs:
         with:
           path: "${{ github.repository }}"
       - name: Install rsync
-        run: apt update && apt -y install rsync
+        run: sudo apt update && sudo apt -y install rsync
       - name: molecule
         uses: robertdebock/molecule-action@5.0.0
         with:
