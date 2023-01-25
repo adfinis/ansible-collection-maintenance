@@ -1,0 +1,8 @@
+---
+
+ubuntu_release_train: lts
+# Define which version of Ubuntu the Upgrade is checked against
+# Possible options: all, devel, latest, lts, stable, supported, supported-esm, series, unsupported
+
+maintenance_exclude_tasks: []
+# Define defaults which can be overriden on a host-by-host basis

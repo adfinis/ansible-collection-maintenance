@@ -1,0 +1,98 @@
+---
+
+- name: This task only serves as a template for the tasks below
+  ansible.builtin.set_fact:
+    ignoreme: &task
+      name: "{{ vars.taskid }}: {{ vars.name }}"
+      register: task
+      when:
+        - "vars.taskid not in maintenance_exclude_tasks"
+        - "maintenance_only is not defined or maintenance_only == vars.taskid"
+  vars:
+    taskid: ignoreme
+    name: bar
+
+#(12-010) Update package lists and check for errors `apt update`
+- <<: *task
+  vars:
+    taskid: 12-010
+    name: "Update package lists and check for errors `apt update`"
+  ansible.builtin.apt:
+    update_cache: yes
+  changed_when: no
+
+
+#(12-012) dkpg status: Are there packages which do not have the dpkg status ii or hi? `dpkg -l | grep -vE '^[hi]i'` Packages with status rc or similar can be removed completely with `dpkg -P`, be careful, usually the configuration files are removed.
+- <<: *task
+  vars:
+    taskid: 12-012
+    name: "dpkg status: Are there packages which do not have the dpkg status ii or hi? | Get list of matching packages"
+  ansible.builtin.shell: dpkg -l | tail -n +6 | grep -vE '^[hi]i'  # noqa risky-shell-pipe  never fails
+  register: ubuntu_dpkg_status
+  check_mode: no
+  changed_when: no
+  failed_when: "ubuntu_dpkg_status.rc not in [0, 1]"
+
+- <<: *task
+  vars:
+    taskid: 11-012
+    name: "dpkg status: Are there packages which do not have the dpkg status ii or hi? | Report matching packages"
+  ansible.builtin.debug:
+    var: "ubuntu_dpkg_status.stdout_lines"
+  changed_when: "ubuntu_dpkg_status.stdout_lines | length > 0"
+
+
+#(12-017) apt: Simulate the package upgrade `apt --simulate upgrade`.
+- <<: *task
+  vars:
+    taskid: 12-017
+    name: "apt: Simulate the package upgrade"
+  ansible.builtin.apt:
+    update_cache: yes
+    upgrade: safe
+  check_mode: yes
+
+
+#(12-019) apt: Remove obsolete packages `apt autoremove`.
+- <<: *task
+  vars:
+    taskid: 12-019
+    name: "apt: Remove obsolete packages"
+  ansible.builtin.apt:
+    autoremove: yes
+  check_mode: yes
+
+#(12-020) boot-config: Check boot configuration: Check ramdisk for actuality `update-initramfs -u` and keep bootloader up to date with `update-grub`.
+- <<: *task
+  vars:
+    taskid: 12-020
+    name: "boot-config: Check boot configuration: update initramfs"
+  ansible.builtin.command: update-initramfs -u
+  changed_when: no  # only requires human interaction in case of errors
+
+- <<: *task
+  vars:
+    taskid: 12-020
+    name: "boot-config: Check boot configuration: keep bootloader up to date"
+  ansible.builtin.command: update-grub
+  changed_when: no  # only requires human interaction in case of errors
+
+- <<: *task
+  vars:
+    taskid: 10-061
+    name: "Updates: Check if a major update is pending. | Update Ubuntu distribution info"
+  ansible.builtin.apt:
+    name:
+      - distro-info
+      - distro-info-data
+    state: latest  # noqa package-latest  we need the latest distro-info-data
+    update_cache: yes
+  changed_when: no  # Don't care if this task actually changed, it's only preparation for the following task
+
+- <<: *task
+  vars:
+    taskid: 10-061
+    name: "Updates: Check if a major update is pending. | Check release name against LTS"
+  ansible.builtin.command: distro-info --{{ ubuntu_release_train }}
+  changed_when:
+    - "ansible_facts.distribution_release not in task.stdout_lines"
