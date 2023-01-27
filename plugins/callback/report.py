@@ -18,14 +18,14 @@ description:
     Example:
 
       example01.example.org
-      - [x] 10-028
-      - [x] 10-032
-      - [ ] 10-034
+      - [x] 10-028: This task is ok
+      - [x] 10-032: This is ok as well
+      - [ ] 10-034: This task reported changed
 
       example02.example.org
-      - [x] 10-028
-      - [ ] 10-032
-      - [x] 10-034
+      - [x] 10-028 A task that reported ok
+      - [~] 10-032 This task was skipped
+      - [x] 10-034 Another ok task
 options: {}
 #  # Kept around as reference
 #  format_string:
@@ -41,9 +41,17 @@ options: {}
 
 import json
 from datetime import datetime
+from enum import IntEnum
 
 from ansible.plugins.callback import CallbackBase
 from ansible.executor.task_result import TaskResult
+
+
+class TaskState(IntEnum):
+    SKIPPED = 0
+    OK = 1
+    CHANGED = 2
+    FAILED = 3
 
 
 class CallbackModule(CallbackBase):
@@ -61,41 +69,35 @@ class CallbackModule(CallbackBase):
         self.tasknames = {}
         super(CallbackModule, self).__init__()
 
-    def on_any(self, *args, **kwargs):
-        # on_any is a horribly hacky catch-all handler that's triggered on every single event during a play.
-
-        # There is no clearly defined "event type" at the top level of the args/kwargs, so we carefully need to check
-        # the result object's internal structure.
-        if len(args) != 2 and len(args[0]) != 2:
+    def _process_task_result(self, result, state):
+        if not isinstance(result, TaskResult):
             return
-        task = args[0][0]
-        if not isinstance(task, TaskResult):
-            return
-
-        if task.is_skipped():
-            return
-        if task.is_failed():
-            state = 2
-        elif task.is_changed():
-            state = 1
-        else:
-            state = 0
-
         # Extract the task information from the TaskResult.
         # Unfortunately, some protected members need to be accessed to get the information we need.  If something in
         # this plugin breaks with future ansible versions, it's probably the next 3 lines.
-        host = task._host.name
-        taskid = task._task.vars.get('taskid')
-        taskname = task._task.vars.get('name', '')
+        host = result._host.name
+        taskid = result._task.vars.get('taskid')
+        taskname = result._task.vars.get('name', '')
         if taskid is None or taskid == 'ignore-me':
             return
-
-        # Store the "worst" result (max, failed=2, changed=1, ok=0) per host and taskid.
+        # Store the "worst" result (max, failed=3, changed=2, ok=1, skipped=0) per host and taskid.
         # E.g. if one subtask failed, consider the entire maintenance task failed.
         hostdict = self.hosts.setdefault(host, {})
-        hostdict[taskid] = max(hostdict.get(taskid, 0), state)
+        hostdict[taskid] = max(hostdict.get(taskid, TaskState.SKIPPED), state)
         # Pipe `|` is used as the separator for "subtasks" if one maintenance task is split into multiple ansible tasks
         self.tasknames[taskid] = taskname.split('|', 1)[0].strip()
+
+    def v2_runner_on_failed(self, result, ignore_errors=False):
+        self._process_task_result(result, TaskState.FAILED)
+
+    def v2_runner_on_skipped(self, result):
+        self._process_task_result(result, TaskState.SKIPPED)
+
+    def v2_runner_on_ok(self, result):
+        if result.is_changed():
+            self._process_task_result(result, TaskState.CHANGED)
+        else:
+            self._process_task_result(result, TaskState.OK)
 
     def v2_playbook_on_stats(self, stats):
         # Generate checklist report at the end of the playbook run
@@ -103,7 +105,9 @@ class CallbackModule(CallbackBase):
             self._display.display('')
             self._display.display(host)
             for task, result in tasks.items():
-                if result == 0:
+                if result == TaskState.SKIPPED:
+                    self._display.display('- [~] %s: %s' % (task, self.tasknames.get(task, '')))
+                elif result == TaskState.OK:
                     self._display.display('- [x] %s: %s' % (task, self.tasknames.get(task, '')))
                 else:
                     self._display.display('- [ ] %s: %s' % (task, self.tasknames.get(task, '')))
