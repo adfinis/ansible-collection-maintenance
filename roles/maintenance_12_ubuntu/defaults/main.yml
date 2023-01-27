@@ -1,0 +1,7 @@
+---
+
+maintenance_exclude_tasks: []
+
+# Define which version of Ubuntu the Upgrade is checked against
+# Possible options: all, devel, latest, lts, stable, supported, supported-esm, series, unsupported
+ubuntu_release_train: lts
