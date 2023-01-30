@@ -152,7 +152,8 @@ def run_module():
             line = line.split('#', 1)[0].strip()
             if not line:
                 continue
-            db, *backends = line.split()
+            tokens = line.split()
+            db, backends = tokens[0], tokens[1:]
             if db != 'passwd:':
                 continue
             for backend in backends:
@@ -197,7 +198,7 @@ def run_module():
                 module.fail_json(msg='SSHD configuration invalid (or insufficient privileges, try become_user=root become=yes)', **result)
 
             for cline in sshd_stdout.decode().splitlines():
-                conf = cline.split(maxsplit=1)
+                conf = cline.split(None, 1)
                 if conf[0] == 'authorizedkeyscommand' and conf[1] != 'none':
                     msg = 'AuthorizedKeysCommand is configured: "{}". Keys returned by this command are not audited.'.format(conf[1])
                     warnings.append(msg)
