@@ -51,6 +51,11 @@ options:
         required: false
         default: [files, compat, db, systemd]
         type: list
+    ignore_nss_backends:
+        description: Consider these NSS backends as "safe" and don't emit a warning if they are not present in limit_nss_backends.
+        required: false
+        default: []
+        type: list
     config:
         description: Path to the sshd config fille
         required: false
@@ -85,6 +90,13 @@ EXAMPLES = r'''
       - 'from="2001:db8::42/128" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKBIpR/ccV9KAL5eoyPaT0frG1+moHO2nM2TsRKrdANU root@backup.example.org'
       - 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICZWKDPix+uTd+P+ZdoD3AkrD8cfikji9JKzvrfhczMA'
     limit_nss_backends: [files, compat, db, systemd, sss]
+
+- name: Silence the warning that sss users are not audited
+  adfinis.maintenance.audit_ssh_authorizedkeys:
+    allowed:
+      - 'from="2001:db8::42/128" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKBIpR/ccV9KAL5eoyPaT0frG1+moHO2nM2TsRKrdANU root@backup.example.org'
+      - 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICZWKDPix+uTd+P+ZdoD3AkrD8cfikji9JKzvrfhczMA'
+    ignore_nss_backends: [sss]
 '''
 
 
@@ -122,7 +134,8 @@ def run_module():
         required=dict(type='list', required=False, default=[]),
         allowed=dict(type='list', required=False, default=[]),
         forbidden=dict(type='list', required=False, default=[]),
-        limit_nss_backends=dict(type='list', required=False, default=['files', 'compat', 'db', 'systemd'])
+        limit_nss_backends=dict(type='list', required=False, default=['files', 'compat', 'db', 'systemd']),
+        ignore_nss_backends=dict(type='list', required=False, default=[]),
     )
 
     # seed the result dict in the object
@@ -159,9 +172,9 @@ def run_module():
             for backend in backends:
                 if backend in module.params['limit_nss_backends']:
                     getent_backends.append(backend)
-                else:
+                elif backend not in module.params['ignore_nss_backends']:
                     msg = 'Users from the NSS passwd backend "{}" are excluded from this check. '.format(backend) + \
-                        'Please audit manually or include the backend in limit_nss_backends'
+                        'Please audit manually or include the backend in either limit_nss_backends or ignore_nss_backends'
                     warnings.append(msg)
 
     # Get user homes
