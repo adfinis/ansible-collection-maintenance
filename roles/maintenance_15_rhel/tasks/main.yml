@@ -75,3 +75,21 @@
   ansible.builtin.debug:
     var: "audit_log_output.stdout_lines"
   changed_when: "audit_log_output.stdout_lines | length > 0"
+
+# The tsflags plugin is used to simulate a package upgrade: https://access.redhat.com/solutions/3386441
+- <<: *task
+  vars:
+    taskid: 15-014
+    name: "Simulate the package upgrade | install tsflags plugin"
+  ansible.builtin.dnf:
+    name: yum-plugin-tsflags
+  check_mode: no
+  changed_when: no # don't care as this is just a preparation step
+
+- <<: *task
+  vars:
+    taskid: 15-014
+    name: "Simulate the package upgrade"
+  ansible.builtin.command: "yum update -y --setopt tsflags=test"
+  register: yum_test_update
+  changed_when: "'No packages marked for update' not in yum_test_update.stdout_lines"
