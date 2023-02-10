@@ -165,6 +165,7 @@
   adfinis.maintenance.audit_ssh_authorizedkeys:
     allowed: "{{ linux_allowed_ssh_authorized_keys + linux_additional_ssh_authorized_keys }}"
     limit_nss_backends: "{{ linux_allowed_ssh_nss_backends }}"
+    ignore_nss_backends: "{{ linux_allowed_ssh_ignored_nss_backends }}"
   check_mode: yes
 
 - <<: *task
