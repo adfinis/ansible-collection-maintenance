@@ -1,0 +1,18 @@
+---
+
+- name: All tasks
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: "10-050: Fix serverlogs address"
+      ansible.builtin.lineinfile:
+        path: /etc/aliases
+        regexp: "^root:"
+        line: "root: serverlogs@example.org"
+        insertbefore: EOF
+
+    - name: "11-017: Execute the package upgrade"
+      ansible.builtin.apt:
+        update_cache: yes
+        upgrade: safe

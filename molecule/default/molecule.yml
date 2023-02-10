@@ -6,8 +6,8 @@ driver:
   name: docker
 
 platforms:
-  - name: "${image:-debian10}-${tag:-latest}"
-    image: "${namespace}${image:-debian10}:${tag:-latest}"
+  - name: "${image:-debian}-${tag:-10}"
+    image: "${namespace}${image:-debian}:${tag:-10}"
 
 provisioner:
   name: ansible
@@ -20,7 +20,6 @@ provisioner:
       duplicate_dict_key: ignore
       inject_facts_as_vars: false
 
-
 scenario:
   test_sequence:
     - dependency
@@ -29,7 +28,7 @@ scenario:
     - create
     - prepare
     - converge
-    # TODO: - side-effects
+    - side_effect
     - idempotence
     - destroy
 
