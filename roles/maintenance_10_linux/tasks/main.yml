@@ -90,7 +90,7 @@
     # 4096 blocks equals 16M (assuming 4k logical blocksize, which is to be expected nowadays)
     large_files: "{{ linux_large_logfiles_stat.results | map(attribute='stat') | selectattr('blocks', 'gt', 4096) | map(attribute='path') | list }}"
   ansible.builtin.debug:
-    var: "{{ large_files }}"
+    var: "large_files"
   changed_when: "large_files | length > 0"
 
 - <<: *task
