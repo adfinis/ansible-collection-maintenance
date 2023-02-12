@@ -153,8 +153,8 @@ def run_module():
 
     last_logins = []
     bad_logins = []
-    # last -i shows 0.0.0.0 for local logins
-    allowed_ips = ['0.0.0.0']
+    # last -i shows 0.0.0.0 or ::1 for local logins
+    allowed_ips = ['0.0.0.0', '::1']
     if module.params['allowed_ips'] is not None:
         allowed_ips.extend(module.params['allowed_ips'])
 
