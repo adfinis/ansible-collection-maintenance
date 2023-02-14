@@ -5,14 +5,17 @@
   gather_facts: true
 
   tasks:
+    - name: "Load distribution version specific tasks"
+      ansible.builtin.include_tasks:
+        file: "{{ item }}"
+      with_first_found:
+        - "side_effect/{{ ansible_facts.distribution }}{{ ansible_facts.distribution_major_version }}.yml"
+        - "side_effect/{{ ansible_facts.distribution }}.yml"
+        - "side_effect/empty.yml"
+
     - name: "10-050: Fix serverlogs address"
       ansible.builtin.lineinfile:
         path: /etc/aliases
         regexp: "^root:"
         line: "root: serverlogs@example.org"
         insertbefore: EOF
-
-    - name: "11-017: Execute the package upgrade"
-      ansible.builtin.apt:
-        update_cache: yes
-        upgrade: safe

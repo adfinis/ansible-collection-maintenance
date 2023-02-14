@@ -149,6 +149,7 @@
   vars:
     taskid: 10-061
     name: "Updates: Check if a major update is pending. | Check release name against stable"
+  tags: molecule-idempotence-notest # this will always be changed on old distros until they are upgraded
   ansible.builtin.command: distro-info --stable
   changed_when:
     - "ansible_facts.distribution_release != 'testing'"
