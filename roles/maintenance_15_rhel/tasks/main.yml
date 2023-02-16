@@ -45,8 +45,7 @@
     name: "Does yum check-update work | Show exit status"
   ansible.builtin.debug:
     msg: "Exited with: {{ yum_checkupdate_output.rc }}, Error is: {{ yum_checkupdate_output.stderr_lines|default('Not available') }}"
-  changed_when: "yum_checkupdate_output.rc != 0 and yum_checkupdate_output.rc != 100"
-  when: "yum_checkupdate_output.rc != 0 and yum_checkupdate_output.rc != 100"
+  changed_when: "yum_checkupdate_output.rc not in [0, 100]"
 
 - <<: *task
   vars:
