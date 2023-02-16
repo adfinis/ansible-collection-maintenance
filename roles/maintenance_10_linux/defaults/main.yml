@@ -1,6 +1,8 @@
 ---
 
-maintenance_exclude_tasks: []
+maintenance_global_exclude_tasks: []
+maintenance_host_exclude_tasks: []
+maintenance_exclude_tasks: "{{ maintenance_global_exclude_tasks + maintenance_host_exclude_tasks }}"
 
 linux_serverlogs_root_alias: serverlogs@example.org
 
