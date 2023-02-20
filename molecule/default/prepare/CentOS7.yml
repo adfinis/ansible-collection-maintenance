@@ -6,6 +6,7 @@
       - openssh-server
       - audit
       - sysvinit-tools
+      - libselinux-python
     state: installed
 
 # EL7 delivers Ansible 2.9 throuh EPEL which is too old for

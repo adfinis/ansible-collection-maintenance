@@ -6,6 +6,7 @@
       - hostname
       - openssh-server
       - audit
+      - libselinux-python3
     state: installed
 
 - name: Create SSH keys

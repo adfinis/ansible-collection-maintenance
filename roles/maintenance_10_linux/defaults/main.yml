@@ -36,6 +36,9 @@ linux_allowed_large_files:
   - "/var/lib/dirsrv/"
   - "/var/log/journal/"
   - "/var/lib/rpm/Packages$"
+  - "./var/lib/rpm/Packages"
   - "/var/cache/yum/"
+  - "./var/cache/dnf/appstream-filenames.solvx"
+  - "./var/cache/dnf/appstream-.*/repodata/.*-filelists.xml.gz"
 
 linux_additional_allowed_large_files: []

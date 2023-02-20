@@ -13,6 +13,8 @@ provisioner:
   name: ansible
   env:
     ANSIBLE_ROLES_PATH: "../../roles"
+  options:
+    D: true
   config_options:
     defaults:
       retry_files_enabled: false
