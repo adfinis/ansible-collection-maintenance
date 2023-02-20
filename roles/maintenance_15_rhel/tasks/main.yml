@@ -33,21 +33,20 @@
   vars:
     taskid: 15-011
     name: "Does yum check-update work"
-  args:
-    warn: false
   ansible.builtin.command: "yum check-update -q"
   register: yum_checkupdate_output
   check_mode: no
+  failed_when: no
   changed_when: no
-  failed_when: "yum_checkupdate_output.stderr_lines | length > 0"
 
 - <<: *task
   vars:
     taskid: 15-011
-    name: "Does yum check-update work | Print new pkgs"
+    name: "Does yum check-update work | Show exit status"
   ansible.builtin.debug:
-    var: yum_checkupdate_output.stdout_lines
-  changed_when: no
+    msg: "Exited with: {{ yum_checkupdate_output.rc }}, Error is: {{ yum_checkupdate_output.stderr_lines|default('Not available') }}"
+  changed_when: "yum_checkupdate_output.rc != 0 and yum_checkupdate_output.rc != 100"
+  when: "yum_checkupdate_output.rc != 0 and yum_checkupdate_output.rc != 100"
 
 - <<: *task
   vars:

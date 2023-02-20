@@ -1,0 +1,32 @@
+---
+
+- name: All tasks
+  hosts: all
+  gather_facts: true
+  vars:
+    maintenance_exclude_tasks:
+      - 11-020 # Initramfs update
+      - 10-028 # Hard depends on systemd -> Doesn't work yet with centos
+    #  - 10-039
+    #  - 10-041
+    #  - 10-042
+    #  - 10-051  # TODO: remove these!
+
+  tasks:
+    - name: "Include 10_linux/"
+      ansible.builtin.include_role:
+        name: "maintenance_10_linux"
+
+    - name: "Include 11_debian/"
+      ansible.builtin.include_role:
+        name: "maintenance_11_debian"
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: "Print os Family"
+      ansible.builtin.debug:
+        var: ansible_facts['os_family']
+
+    - name: "Include 15_rhel/"
+      ansible.builtin.include_role:
+        name: "maintenance_15_rhel"
+      when: ansible_facts['os_family'] == "RedHat" or ansible_facts['os_family'] == "Suse"

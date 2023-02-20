@@ -1,0 +1,12 @@
+---
+
+- name: "15-010: Create local repo"
+  ansible.builtin.copy:
+    dest: "/etc/yum.repos.d/local.repo"
+    content: |
+      [rhel-{{ ansible_facts.distribution_major_version }}-server-x86_64]
+      name = {{ ansible_facts.distribution_major_version }}-server-x86_64
+      enabled = 1
+      mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=os&infra=$infra
+      gpgcheck=0
+      cost=9001

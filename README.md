@@ -136,6 +136,14 @@ changed: [debian01.example.org]
 
 There is also a checklist summarising all tasks that were run but finished with either `ok` or `skipped`.
 
+## Molecule Tests
+
+Before testing, create a file `.env.yml` with the infos on the platform you want to test (see the matrix in the [molecule workflow](.github/workflows/molecule.yml) for examples):
+
+``` yaml
+image: "debian"
+tag: "bullseye"
+```
 
 ## License
 

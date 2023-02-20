@@ -1,0 +1,6 @@
+---
+
+- name: "11-017: Execute the package upgrade"
+  ansible.builtin.apt:
+    update_cache: yes
+    upgrade: safe

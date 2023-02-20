@@ -1,0 +1,38 @@
+---
+dependency:
+  name: galaxy
+
+driver:
+  name: docker
+
+platforms:
+  - name: "${image:-debian}-${tag:-10}"
+    image: "${namespace}${image:-debian}:${tag:-10}"
+
+provisioner:
+  name: ansible
+  env:
+    ANSIBLE_ROLES_PATH: "../../roles"
+  options:
+    D: true
+  config_options:
+    defaults:
+      retry_files_enabled: false
+      callbacks_enabled: "adfinis.maintenance.report"
+      duplicate_dict_key: ignore
+      inject_facts_as_vars: false
+
+scenario:
+  test_sequence:
+    - dependency
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    - side_effect
+    - idempotence
+    - destroy
+
+verifier:
+  name: ansible

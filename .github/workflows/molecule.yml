@@ -1,0 +1,39 @@
+---
+name: Ansible Molecule
+
+on:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        config:
+          - image: "debian"
+            tag: "bullseye"
+          - image: "debian"
+            tag: "buster"
+          - image: "centos"
+            tag: "7"
+          - image: "centos"
+            namespace: "quay.io/centos/"
+            tag: "stream8"
+          - image: "centos"
+            namespace: "quay.io/centos/"
+            tag: "stream9"
+          - image: "leap"
+            namespace: "registry.opensuse.org/opensuse/"
+            tag: "15"
+      fail-fast: false
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+        with:
+          path: "${{ github.repository }}"
+      - name: molecule
+        uses: robertdebock/molecule-action@5.0.2
+        with:
+          image: ${{ matrix.config.image }}
+          tag: ${{ matrix.config.tag }}
+          namespace: ${{ matrix.config.namespace }}

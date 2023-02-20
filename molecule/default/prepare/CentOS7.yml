@@ -1,0 +1,19 @@
+---
+- name: Install packages
+  ansible.builtin.yum:
+    name:
+      - selinux-policy
+      - openssh-server
+      - audit
+      - sysvinit-tools
+      - libselinux-python
+    state: installed
+
+# EL7 delivers Ansible 2.9 throuh EPEL which is too old for
+# ansible-collection-maintenance
+# To keep effort low, we take the package through pip
+
+- name: Create SSH keys
+  ansible.builtin.command:
+    cmd: "ssh-keygen -A"
+    creates: /etc/ssh/ssh_host_rsa_key

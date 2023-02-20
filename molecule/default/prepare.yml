@@ -1,0 +1,11 @@
+---
+
+- name: Prepare hosts
+  hosts: all
+  tasks:
+    - name: Gather facts
+      ansible.builtin.setup:
+
+    - name: Prepare container
+      ansible.builtin.include_tasks:
+        file: "prepare/{{ ansible_facts.distribution }}{{ ansible_facts.distribution_major_version }}.yml"

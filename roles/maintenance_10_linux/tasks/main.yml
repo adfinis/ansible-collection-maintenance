@@ -119,6 +119,7 @@
   vars:
     taskid: 10-039
     name: "Logfiles: Does journald log to persistent storage? | Report age of system journal"
+  tags: molecule-idempotence-notest
   ansible.builtin.debug:
     msg: >-
       /var/log/journal/{{ ansible_facts.machine_id }}/system.journal
