@@ -97,9 +97,10 @@
   vars:
     taskid: 10-035
     name: "Are there logfiles outside /var/log that are not rotated? | Find large files outside /var/log"
-  adfinis.maintenance.find:
-    paths: "{{ ansible_facts.mounts | map(attribute='mount') | list }}"
     prune: "{{ linux_large_logfiles_prune + linux_additional_large_logfiles_prune }}"
+  adfinis.maintenance.find:
+    paths: "{{ ansible_facts.mounts | map(attribute='mount') | difference(prune) | list }}"
+    prune: "{{ prune }}"
     xdev: yes
     type: file
     size: "+16M"
