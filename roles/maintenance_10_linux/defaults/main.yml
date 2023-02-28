@@ -29,9 +29,9 @@ linux_additional_allowed_login_ips: []
 
 linux_large_logfiles_prune:
   - /mnt
-
-linux_additional_large_logfiles_prune:
   - /var/log/lastlog
+  
+linux_additional_large_logfiles_prune: []
 
 # ... and use allowed_large_files to exclude single files or small directories from the result
 
