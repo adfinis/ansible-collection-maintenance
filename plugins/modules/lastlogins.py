@@ -31,6 +31,11 @@ options:
         required: false
         default: 'See "man 1 last" on the target system.'
         type: str
+    since:
+        description: 'Time window to consider by "last".  Format e.g. "-90days", see "man 1 last" for details.'
+        required: false
+        default: none
+        type: str
     allowed_users:
         description: List of usernames allowed to log in.
         required: false
@@ -82,6 +87,8 @@ EXAMPLES = r'''
     allowed_users:
       - root
       - adfinis
+    # This examples only checks the previous day
+    since: yesterday
 '''
 
 
@@ -109,6 +116,7 @@ def run_module():
     module_args = dict(
         last=dict(type='str', required=False, default='last'),
         wtmp=dict(type='str', required=False, default=None),
+        since=dict(type='str', required=False, default=None),
         allowed_users=dict(type='list', required=False, default=None),
         forbidden_users=dict(type='list', required=False, default=None),
         allowed_ips=dict(type='list', required=False, default=None),
@@ -139,9 +147,11 @@ def run_module():
     }
     if module.params['wtmp'] is not None:
         # last --file wtmp --ip --fullnames --fulltimes (RHEL version only supports shortops
-        cmdline = [module.params['last'], '-f', module.params['wtmp'], '-i', '-W', '-F']
+        cmdline = [module.params['last'], '-f', module.params['wtmp'], '-i', '-w', '-F']
     else:
         cmdline = [module.params['last'], '-i', '-w', '-F']
+    if module.params['since'] is not None:
+        cmdline.extend(['-s', module.params['since']])
     lastproc = subprocess.Popen(cmdline, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
     out, err = lastproc.communicate()
 
