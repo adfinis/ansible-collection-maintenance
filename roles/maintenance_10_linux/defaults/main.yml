@@ -29,7 +29,6 @@ linux_additional_allowed_login_ips: []
 
 linux_large_logfiles_prune:
   - /mnt
-  - /var/log/lastlog
   
 linux_additional_large_logfiles_prune: []
 
@@ -45,5 +44,6 @@ linux_allowed_large_files:
   - "/var/log/journal/"
   - "/var/lib/rpm/Packages$"
   - "/var/cache/yum/"
+  - "/var/log/lastlog"
 
 linux_additional_allowed_large_files: []
