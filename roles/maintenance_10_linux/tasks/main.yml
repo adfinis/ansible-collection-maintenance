@@ -157,6 +157,7 @@
   adfinis.maintenance.lastlogins:
     allowed_users: "{{ linux_allowed_login_users + linux_additional_allowed_login_users }}"
     allowed_ips: "{{ linux_allowed_login_ips + linux_additional_allowed_login_ips }}"
+    since: "{{ linux_allowed_login_since }}"
 
 - <<: *task
   vars:
