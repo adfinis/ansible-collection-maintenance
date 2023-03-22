@@ -89,8 +89,9 @@ found:
 
 from ansible.module_utils.basic import AnsibleModule
 
-import subprocess
+import os
 import re
+import subprocess
 
 
 def run_module():
@@ -128,7 +129,15 @@ def run_module():
     for path in module.params['paths']:
         if path.startswith('-'):
             path = './' + path
-        cmdline.append(path)
+        # Search paths below a pruned subtree must be removed from the cmdline, otherwise they are not pruned.
+        prune = False
+        for p in module.params['prune']:
+            abspath = os.path.abspath(p)
+            if os.path.commonprefix([os.path.abspath(path), abspath]) == abspath:
+                prune = True
+                break
+        if not prune:
+            cmdline.append(path)
 
     for path in module.params['prune']:
         cmdline.append('-path')
