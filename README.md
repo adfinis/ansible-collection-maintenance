@@ -37,13 +37,26 @@ rhel01.example.org
 centos01.example.org
 ```
 
-Every checklist task (which may consist of more than one Ansible task) has a unique task ID in the form `XX-YYY` which `XX` being the checklist id and `YYY` being a consecutive number within the checklist. E.g. `10-042`.  These IDs can be used to exclude tasks from being applied to one or more hosts using the `maintenance_exclude_tasks` hostvar:
-
+Every checklist task (which may consist of more than one Ansible task) has a unique task ID in the form `XX-YYY` which `XX` being the checklist id and `YYY` being a consecutive number within the checklist. E.g. `10-042`.  These IDs can be used to exclude tasks from being applied to one or more hosts using the `maintenance_exclude_tasks` hostvar.
+To be able to easily exclude some checks globally in a playbook and some checks only on a host-level, the variable by default combines `maintenance_global_exclude_tasks` and `maintenance_host_exclude_tasks`:
 
 ```yaml
-maintenance_exclude_tasks:
+# Exclude tasks globally
+--- group_vars/all/maint.yml
+maintenance_global_exclude_tasks:
   - 10-042
+
+--- host_vars/my_host/maint.yml
+# Additionally exclude 11-023 only on one host
+maintenance_host_exclude_tasks:
   - 11-023
+  # 10-042 is implicitly excluded by above global statement
+
+--- host_vars/other_host/maint.yml
+# Explicitly ONLY exclude a task on my host
+maintenance_exclude_tasks:
+  - 11-023
+  # 10-042 will be included, global list doesn't apply
 ```
 
 Some of the checklists have additional options which can be
