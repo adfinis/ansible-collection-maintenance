@@ -17,7 +17,7 @@ linux_allowed_ssh_nss_backends:
   - systemd
 linux_allowed_ssh_ignored_nss_backends: []
 
-linux_allowed_login_since: -90days
+# linux_allowed_login_since: loaded via OS specific vars, as older systems don't support --since yet
 
 linux_allowed_login_users:
   - root

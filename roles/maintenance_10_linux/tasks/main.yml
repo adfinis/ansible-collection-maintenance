@@ -12,6 +12,13 @@
     taskid: ignore-me
     name: bar
 
+- name: Include OS-specific vars
+  ansible.builtin.include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_facts.distribution }}{{ ansible_facts.distribution_major_version }}.yml"
+    - "{{ ansible_facts.os_family }}{{ ansible_facts.distribution_major_version }}.yml"
+    - "{{ ansible_facts.distribution }}.yml"
+    - "{{ ansible_facts.os_family }}.yml"
 
 - name: Gather local user accounts
   ansible.builtin.getent:
@@ -157,7 +164,7 @@
   adfinis.maintenance.lastlogins:
     allowed_users: "{{ linux_allowed_login_users + linux_additional_allowed_login_users }}"
     allowed_ips: "{{ linux_allowed_login_ips + linux_additional_allowed_login_ips }}"
-    since: "{{ linux_allowed_login_since }}"
+    since: "{{ linux_allowed_login_since | default(omit) }}"
 
 - <<: *task
   vars:
