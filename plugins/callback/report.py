@@ -67,6 +67,7 @@ class CallbackModule(CallbackBase):
     def __init__(self):
         self.hosts = {}
         self.tasknames = {}
+        self.todo = {}
         super(CallbackModule, self).__init__()
 
     def _process_task_result(self, result, state):
@@ -86,6 +87,7 @@ class CallbackModule(CallbackBase):
         hostdict[taskid] = max(hostdict.get(taskid, TaskState.SKIPPED), state)
         # Pipe `|` is used as the separator for "subtasks" if one maintenance task is split into multiple ansible tasks
         self.tasknames[taskid] = taskname.split('|', 1)[0].strip()
+        self.todo[taskid] = result._task.vars.get('todo')
 
     def v2_runner_on_failed(self, result, ignore_errors=False):
         self._process_task_result(result, TaskState.FAILED)
@@ -108,6 +110,9 @@ class CallbackModule(CallbackBase):
                 if result == TaskState.SKIPPED:
                     self._display.display('- [~] %s: %s' % (task, self.tasknames.get(task, '')))
                 elif result == TaskState.OK:
-                    self._display.display('- [x] %s: %s' % (task, self.tasknames.get(task, '')))
+                    if self.todo.get(task, False):
+                        self._display.display('- [ ] %s: %s' % (task, self.tasknames.get(task, '')))
+                    else:
+                        self._display.display('- [x] %s: %s' % (task, self.tasknames.get(task, '')))
                 else:
                     self._display.display('- [ ] %s: %s' % (task, self.tasknames.get(task, '')))
