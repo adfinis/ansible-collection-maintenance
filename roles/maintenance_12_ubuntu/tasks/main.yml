@@ -12,7 +12,7 @@
     taskid: ignore-me
     name: bar
 
-#(12-010) Update package lists and check for errors `apt update`
+# (12-010) Update package lists and check for errors `apt update`
 - <<: *task
   vars:
     taskid: 12-010
@@ -22,7 +22,7 @@
   changed_when: no
 
 
-#(12-012) dkpg status: Are there packages which do not have the dpkg status ii or hi? `dpkg -l | grep -vE '^[hi]i'` Packages with status rc or similar can be removed completely with `dpkg -P`, be careful, usually the configuration files are removed.
+# (12-012) dkpg status: Are there packages which do not have the dpkg status ii or hi? `dpkg -l | grep -vE '^[hi]i'` Packages with status rc or similar can be removed completely with `dpkg -P`, be careful, usually the configuration files are removed.
 - <<: *task
   vars:
     taskid: 12-012
@@ -42,7 +42,7 @@
   changed_when: "ubuntu_dpkg_status.stdout_lines | length > 0"
 
 
-#(12-017) apt: Simulate the package upgrade `apt --simulate upgrade`.
+# (12-017) apt: Simulate the package upgrade `apt --simulate upgrade`.
 - <<: *task
   vars:
     taskid: 12-017
@@ -53,7 +53,7 @@
   check_mode: yes
 
 
-#(12-019) apt: Remove obsolete packages `apt autoremove`.
+# (12-019) apt: Remove obsolete packages `apt autoremove`.
 - <<: *task
   vars:
     taskid: 12-019
@@ -62,7 +62,7 @@
     autoremove: yes
   check_mode: yes
 
-#(12-020) boot-config: Check boot configuration: Check ramdisk for actuality `update-initramfs -u` and keep bootloader up to date with `update-grub`.
+# (12-020) boot-config: Check boot configuration: Check ramdisk for actuality `update-initramfs -u` and keep bootloader up to date with `update-grub`.
 - <<: *task
   vars:
     taskid: 12-020
