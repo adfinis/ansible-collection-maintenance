@@ -2,6 +2,10 @@
 
 name: Ansible Galaxy
 
+tags:
+  - linux
+  - infrastructure
+
 on:
   push:
     tags:
@@ -12,14 +16,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set version in galaxy.yml
-      run: |
-        VERSION=${GITHUB_REF#refs/tags/v}
-        sed -re "s/^version:.*$/version: ${VERSION}/" -i galaxy.yml
+      - name: Set version in galaxy.yml
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          sed -re "s/^version:.*$/version: ${VERSION}/" -i galaxy.yml
 
-    - name: Upload collection to Ansible Galaxy
-      uses: ansible/ansible-publish-action@v1.0.0
-      with:
-        api_key: ${{ secrets.GALAXY_API_KEY }}
+      - name: Upload collection to Ansible Galaxy
+        uses: ansible/ansible-publish-action@v1.0.0
+        with:
+          api_key: ${{ secrets.GALAXY_API_KEY }}
