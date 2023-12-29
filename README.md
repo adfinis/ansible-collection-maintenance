@@ -121,8 +121,8 @@ debian01.example.org
 - [x] 10-040: Security: User: Are all created users documented in the wiki with password?
 - [ ] 10-041: Security: Logins: Are there logins from suspicious hosts/users?
 - [ ] 10-042: Security: SSH keys: Check for unknown or outdated keys for root and all users
-- [x] 10-050: Mail: serverlogs: Is serverlogs@ entered in /etc/aliases for root?
-- [x] 10-051: Mail: aliases.db: Make sure /etc/aliases.db is up to date
+- [~] 10-050: Mail: serverlogs: Is serverlogs@ entered in /etc/aliases for root?
+- [~] 10-051: Mail: aliases.db: Make sure /etc/aliases.db is up to date
 - [x] 11-011: Security: Are the security updates in the sources.list?
 - [x] 11-012: Repository: Check if repository is set to release name (e.g. 'bullseye') and not to 'stable'
 - [x] 11-013: For old distributions, has the repository been moved to http://archive.debian.org/ already?
@@ -135,6 +135,13 @@ debian01.example.org
 ```
 
 With the ansible.cfg settings above, tasks that completed with the status `ok` or `skipped` won't be displayed, instead only `changed` tasks are shown, getting you a clear report on that you should look at.
+
+The content of the checkboxes has the following meaning:
+```
+- [x] ok - nothing to do
+- [~] skipped - task skipped as configured. Check if it's still reasonable to skip this task
+- [ ] changed or failed - See output on what to do
+```
 
 If you want more detailed output, execute the playbook with the `--diff` option, example output:
 ```
