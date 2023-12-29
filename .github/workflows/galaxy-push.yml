@@ -2,10 +2,6 @@
 
 name: Ansible Galaxy
 
-tags:
-  - linux
-  - infrastructure
-
 on:
   push:
     tags:
