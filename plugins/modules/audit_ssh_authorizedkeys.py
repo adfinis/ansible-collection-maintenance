@@ -191,7 +191,7 @@ def run_module():
         for backend in getent_backends:
             getent = subprocess.Popen(['/usr/bin/getent', 'passwd', '-s', backend], stdout=subprocess.PIPE)
             getent_stdout, _ = getent.communicate()
-            for line in getent_stdout.decode().splitlines():
+            for line in getent_stdout.decode('utf-8').splitlines():
                 users.add(GetentPwdEnt(*line.split(':', 6)))
 
     # Read the acutal ssh authorized_keys
@@ -210,7 +210,7 @@ def run_module():
             if sshd_configtest.returncode != 0:
                 module.fail_json(msg='SSHD configuration invalid (or insufficient privileges, try become_user=root become=yes)', **result)
 
-            for cline in sshd_stdout.decode().splitlines():
+            for cline in sshd_stdout.decode('utf-8').splitlines():
                 conf = cline.split(None, 1)
                 if conf[0] == 'authorizedkeyscommand' and conf[1] != 'none':
                     msg = 'AuthorizedKeysCommand is configured: "{}". Keys returned by this command are not audited.'.format(conf[1])
