@@ -196,7 +196,7 @@ def run_module():
     out, err = findproc.communicate()
 
     if findproc.returncode != 0:
-        result['stderr'] = err.decode()
+        result['stderr'] = err.decode('utf-8')
         module.fail_json(msg='find process exited with non-zero returncode.  Run with -vvv to view stderr', **result)
 
     result['found'] = []

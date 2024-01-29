@@ -156,7 +156,7 @@ def run_module():
     out, err = lastproc.communicate()
 
     if lastproc.returncode != 0:
-        result['stderr'] = err.decode()
+        result['stderr'] = err.decode('utf-8')
         module.fail_json(msg='last process exited with non-zero returncode.  Run with -vvv to view stderr', **result)
 
     # Parse output and match against allowed or forbidden users and/or ips
@@ -168,7 +168,7 @@ def run_module():
     if module.params['allowed_ips'] is not None:
         allowed_ips.extend(module.params['allowed_ips'])
 
-    for line in out.decode().splitlines():
+    for line in out.decode('utf-8').splitlines():
         if line.startswith('reboot') or line[1:].startswith('tmp begins') or len(line) == 0:
             continue
         tokens = line.split(None, 3)
