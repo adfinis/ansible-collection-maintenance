@@ -3,3 +3,14 @@
 maintenance_global_exclude_tasks: []
 maintenance_host_exclude_tasks: []
 maintenance_exclude_tasks: "{{ maintenance_global_exclude_tasks + maintenance_host_exclude_tasks }}"
+
+debian_sources_list_security_uri: http://security.debian.org/debian-security
+debian_sources_list_security_suite: >-
+  {%- if ansible_facts.distribution_major_version|int < 11 -%}
+  {{- ansible_facts.distribution_release -}}/updates
+  {%- else -%}
+  {{- ansible_facts.distribution_release -}}-security
+  {%- endif -%}
+
+# Repositories for which to ignore the use of release names such as "stable"
+debian_release_name_ignore_uris: []
