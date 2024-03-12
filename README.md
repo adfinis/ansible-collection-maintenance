@@ -165,7 +165,7 @@ For development on this collection, we recommend the following setup:
 
 - Set up a separate project folder with an inventory of your development target systems, hostvars and ansible.cfg as described above.
 - `cd` to that folder.
-- Run `ansible-galaxy collection install adfinis.maintenace`.  This will also install all the required dependencies.
+- Run `ansible-galaxy collection install adfinis.maintenance`.  This will also install all the required dependencies.
 - `rm -rf ./galaxy/ansible_collections/adfinis/maintenance` to remove the collection downloaded from Galaxy.
 - `git clone github.com:adfinis/ansible-collection-maintenance ./galaxy/ansible_collections/adfinis/maintenance` to checkout the git repository.
 - Do your development inside `./galaxy/ansible_collections/adfinis/maintenance`.
