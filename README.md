@@ -169,7 +169,7 @@ For development on this collection, we recommend the following setup:
 - `rm -rf ./galaxy/ansible_collections/adfinis/maintenance` to remove the collection downloaded from Galaxy.
 - `git clone github.com:adfinis/ansible-collection-maintenance ./galaxy/ansible_collections/adfinis/maintenance` to checkout the git repository.
 - Do your development inside `./galaxy/ansible_collections/adfinis/maintenance`.
-- For testing, run the playbook from your project folder as e.g. `ansible-galaxy -i inventory --diff adfinis.maintenance.playbook`.
+- For testing, run the playbook from your project folder as e.g. `ansible-playbook -i inventory --diff adfinis.maintenance.playbook`.
   - If your Ansible version does not allow this yet, use the playbook path rather than its FQCN, i.e. `./galaxy/ansible_collections/adfinis/maintenance/playbooks/playbook.yml`.
   - To only test a single checklist item, you can run `ansible-playbook` limited to the taskid, using the `maintenance_only` variable: ` ansible-playbook -e maintenance_only=10-011 ...`.
 
