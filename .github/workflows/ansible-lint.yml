@@ -13,5 +13,3 @@ jobs:
 
       - name: Run ansible-lint
         uses: ansible/ansible-lint@v24
-        with:
-          path: "${GITHUB_WORKSPACE}"
