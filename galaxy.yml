@@ -41,6 +41,7 @@ tags:
 dependencies:
   ansible.posix: 1.4.0
   community.general: 1.3.6
+  adfinis.facts: 1.0.2
 
 # The URL of the originating SCM repository
 repository: https://github.com/adfinis/ansible-collection-maintenance
