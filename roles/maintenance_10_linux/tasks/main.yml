@@ -112,7 +112,32 @@
     size: "+16M"
     age: "-{{ 60 * 24 * 7 * 2 }}"  # two weeks
     exclude: "{{ linux_allowed_large_files + linux_additional_allowed_large_files }}"
+    
+- <<: *task
+  vars:
+    taskid: 10-037
+    name: "Disk: logrotate: Are there files in /var/log that are not rotated?"
+  ansible.builtin.find:
+    paths: /var/log
+    recurse: yes
+    patterns: "*.log"
+  register: log_files
 
+- <<: *task
+  vars:
+    taskid: 10-037
+    name: "Disk: logrotate: Are there files in /var/log that are not rotated?"
+  ansible.builtin.set_fact:
+    unrotated_files: "{{ log_files.files | rejectattr('path', 'in', logrotate_output.stdout_lines) | map(attribute='path') | list }}"
+
+- <<: *task
+  vars:
+    taskid: 10-037
+    name: "Disk: logrotate: Are there files in /var/log that are not rotated?"
+  ansible.builtin.debug:
+    msg: "Files not managed by logrotate: {{ unrotated_files }}"
+  when: unrotated_files | length > 0
+  
 - <<: *task
   vars:
     taskid: 10-039
