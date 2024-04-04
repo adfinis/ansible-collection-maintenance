@@ -119,8 +119,7 @@
     name: "Disk: logrotate: Are there files in /var/log that are not rotated?"
   ansible.builtin.shell: "cat /var/lib/logrotate/logrotate.status"
   register: logrotate_output
-  tags:
-    - skip_ansible_lint
+  tags: skip_ansible_lint
 
 - <<: *task
   vars:
