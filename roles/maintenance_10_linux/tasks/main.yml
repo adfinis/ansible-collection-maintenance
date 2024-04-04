@@ -144,7 +144,7 @@
   ansible.builtin.debug:
     msg: "Files not managed by logrotate: {{ unrotated_files }}"
   when: unrotated_files | length > 0
-  
+
 - <<: *task
   vars:
     taskid: 10-039
