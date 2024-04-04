@@ -113,6 +113,13 @@
     age: "-{{ 60 * 24 * 7 * 2 }}"  # two weeks
     exclude: "{{ linux_allowed_large_files + linux_additional_allowed_large_files }}"
     
+ <<: *task
+  vars:
+    taskid: 10-037 
+    name: "Disk: logrotate: Are there files in /var/log that are not rotated?"
+  ansible.builtin.shell: "cat /var/lib/logrotate/logrotate.status"
+  register: logrotate_output
+
 - <<: *task
   vars:
     taskid: 10-037
