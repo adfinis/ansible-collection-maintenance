@@ -1,0 +1,113 @@
+---
+
+- name: This task only serves as a template for the tasks below
+  ansible.builtin.set_fact:
+    ignoreme: &task
+      name: "{{ vars.taskid }}: {{ vars.name }}"
+      register: task
+      when:
+        - "vars.taskid not in maintenance_exclude_tasks"
+        - "maintenance_only is not defined or maintenance_only == vars.taskid"
+  vars:
+    taskid: ignoreme
+    name: bar
+
+- <<: *task
+  vars:
+    taskid: 14-001
+    name: "Apparmor: Check if apparmor is enabled and enforcing apparmor_status"
+  ansible.builtin.command: apparmor_status
+  register: apparmor_status_output
+  changed_when: false
+  failed_when: false
+
+- <<: *task
+  vars:
+    taskid: 14-001
+    name: "Apparmor: Check if apparmor is enabled and enforcing apparmor_status"
+  ansible.builtin.debug:
+    msg: "{{ apparmor_status_output.stdout }}"
+  when: apparmor_status_output is succeeded
+
+- <<: *task
+  vars:
+    taskid: 14-002
+    name: "Check if the system is properly registered at SUSE SUSEConnect --status-text"
+  ansible.builtin.command: SUSEConnect --status-text
+  register: suseconnect_status_output
+  changed_when: false
+
+- <<: *task
+  vars:
+    taskid: 14-002
+    name: "Check if the system is properly registered at SUSE SUSEConnect --status-text"
+  ansible.builtin.debug:
+    msg: "System is Registered"
+  when: "'Not Registered' not in suseconnect_status_output.stdout"
+
+- <<: *task
+  vars:
+    taskid: 14-002
+    name: "Check if the system is properly registered at SUSE SUSEConnect --status-text"
+  ansible.builtin.debug:
+    msg: "System is Not Registered"
+  when: "'Not Registered' in suseconnect_status_output.stdout"
+
+- <<: *task
+  vars:
+    taskid: 14-003
+    name: "Zypper: Update package lists and check for errors zypper refresh"
+  ansible.builtin.command: zypper refresh
+  register: zypper_refresh_output
+  changed_when: false
+  failed_when: false
+
+- <<: *task
+  vars:
+    taskid: 14-003
+    name: "Zypper: Update package lists and check for errors zypper refresh"
+  ansible.builtin.debug:
+    msg: "Package lists updated successfully."
+  when: zypper_refresh_output.rc == 0
+
+- <<: *task
+  vars:
+    taskid: 14-003
+    name: "Zypper: Update package lists and check for errors zypper refresh"
+  ansible.builtin.debug:
+    msg: "Warning There are no enabled repositories defined"
+  when: "'Warning' in zypper_refresh_output.stdout"
+
+- <<: *task
+  vars:
+    taskid: 14-004
+    name: "Zypper: Check for available updates and review them zypper list-updates"
+  ansible.builtin.command: zypper list-updates
+  register: zypper_updates_output
+  changed_when: false
+  failed_when: false
+
+- <<: *task
+  vars:
+    taskid: 14-004
+    name: "Zypper: Check for available updates and review them zypper list-updates"
+  ansible.builtin.debug:
+    msg: "Available updates reviewed."
+  when: zypper_updates_output.rc == 0
+
+- <<: *task
+  vars:
+    taskid: 14-005
+    name: "Zypper: Check for orphaned packages but do not uninstall them if not needed anymore zypper packages --orphaned"
+  ansible.builtin.command: zypper packages --orphaned
+  register: zypper_orphaned_output
+  changed_when: false
+  failed_when: false
+
+- <<: *task
+  vars:
+    taskid: 14-005
+    name: "Zypper: Check for orphaned packages but do not uninstall them if not needed anymore zypper packages --orphaned"
+  ansible.builtin.debug:
+    msg: "Orphaned packages checked."
+  when: zypper_orphaned_output.rc == 0

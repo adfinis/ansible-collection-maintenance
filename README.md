@@ -18,6 +18,7 @@ It does so in a way that may be a bit counterintuitive for someone used to Ansib
 The tasks to run are grouped into "checklists". By convention, each checklist is implemented in a separate role, e.g.:
 * The `maintenance_10_linux` role implements tasks common to most Linux systems
 * The `maintenance_11_debian` role implements Debian-specific tasks
+* The `maintenance_14_sles` role implements Suse-specific tasks
 
 Checklists (i.e. roles) are assigned to hosts via playbooks.  The
 example playbook in `playbooks/playbook.yml` applies each role to an
@@ -31,6 +32,10 @@ maintenance_15_rhel
 [maintenance_11_debian]
 debian01.example.org
 debian02.example.org
+
+[maintenance_14_sles]
+sles01.example.org
+sles02.example.org
 
 [maintenance_15_rhel]
 rhel01.example.org
