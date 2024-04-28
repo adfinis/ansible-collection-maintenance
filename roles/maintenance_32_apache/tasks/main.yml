@@ -231,7 +231,7 @@
   vars:
     taskid: 32-014
     name: Test whether that certificate is valid in a month
-  set_fact:
+  ansible.builtin.set_fact:
       apache_cert_expires_soon: true
   loop: "{{ apache_cert_info.results }}"
   when: (item.valid_at.one_month_later | default(true)) == false
