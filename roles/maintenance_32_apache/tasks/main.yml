@@ -11,23 +11,22 @@
     taskid: ignore-me
     name: bar
 
-
-# Set get distro used, used when 
-# determining binary name.
+# Include OS specific vars to get binary name: apache_binary_name, httpd or apache2
 - <<: *task
   vars:
     taskid: 32-009
-    name: "Gather details, set vars: set apache binary based on pkg manager"
-  set_fact: 
-    binary_name: "{{ 'httpd' if package_manager == 'rpm' else 'apache2' }}" 
+    name: "Apache: Gather details, set vars: set apache binary based on OS"  
+  ansible.builtin.include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_facts.os_family }}.yml"
   changed_when: no
 
 # Get the exact binary path from the systemd service
 - <<: *task
   vars:
     taskid: 32-009
-    name: "Gather details, set vars: query systemd service for binary name being used"
-  shell: "systemctl show -p ExecStart {{ binary_name }} | grep 'ExecStart' | awk '{print $2}' | cut -d= -f2"
+    name: "Apache: Gather details, set vars: query systemd service for binary name being used"
+  ansible.builtin.shell: "systemctl show -p ExecStart {{ apache_binary_name }} | grep 'ExecStart' | awk '{print $2}' | cut -d= -f2"
   register: apache_exec_path_raw
   changed_when: no
   ignore_errors: yes
@@ -35,16 +34,16 @@
 - <<: *task
   vars:
     taskid: 32-009
-    name: "Get apache binary path used by apache systemd service"  
-  set_fact:
-    binary_path: "{{ apache_exec_path_raw.stdout if apache_exec_path_raw.rc == 0 else binary_path }}"
+    name: "Apache: Get apache binary path used by apache systemd service"  
+  ansible.builtin.set_fact:
+    apache_binary_path: "{{ apache_exec_path_raw.stdout if (apache_exec_path_raw.stdout | length) > 0 else 'apachectl' }}"
   changed_when: no
 
 - <<: *task
   vars:
     taskid: 32-009
-    name: "Get apache run details"
-  shell: "{{ binary_path }} -V && {{ binary_path }} -S"
+    name: "Apache: Get apache run details"
+  ansible.builtin.shell: "{{ apache_binary_path }} -V && {{ apache_binary_path }} -S"
   register: apache_details
   changed_when: no
 
@@ -52,9 +51,9 @@
 - <<: *task
   vars:
     taskid: 32-009
-    name: "Extract HTTP root directory"
-  set_fact:
-    httpd_root_directory: "{{ apache_details.stdout | regex_search('HTTPD_ROOT=\"([^\"]+)\"') | replace('\"','') | split('=') | last }}"
+    name: "Apache: Extract HTTP root directory"
+  ansible.builtin.set_fact:
+    apache_root_directory: "{{ apache_details.stdout | regex_search('HTTPD_ROOT=\"([^\"]+)\"') | replace('\"','') | split('=') | last }}"
   when: "'HTTPD_ROOT' in apache_details.stdout"
   changed_when: no
 
@@ -62,29 +61,18 @@
 - <<: *task
   vars:
     taskid: 32-009
-    name: "Extract server config file path"
-  set_fact:
-    config_file_name: "{{ httpd_root_directory + '/' + apache_details.stdout | regex_search('SERVER_CONFIG_FILE=\"([^\"]+)\"') | replace('\"','') | split('=') | last }}"
-  when: "'SERVER_CONFIG_FILE' in apache_details.stdout"
-  changed_when: no
-
-# Extract the server error log paths
-- <<: *task
-  vars:
-    taskid: 32-009
-    name: "Extract the used error log path"
-  set_fact:
-    error_log_name: "{{ apache_details.stdout | regex_search('Main ErrorLog: \"([^\"]+)\"') | replace('\"','') | split(': ') | last }}"
-  when: "'Main ErrorLog: ' in apache_details.stdout"
+    name: "Apache: Extract server config file path"
+  ansible.builtin.set_fact:
+    apache_config_file_name: "{{ apache_root_directory + '/' + apache_details.stdout | regex_search('SERVER_CONFIG_FILE=\"([^\"]+)\"') | replace('\"','') | split('=') | last }}"
   changed_when: no
 
 # Extract whether SSL is enabled
 - <<: *task
   vars:
     taskid: 32-009
-    name: "Extract whether SSL is enabled"
-  shell: "{{ binary_path }} -M | grep ssl"
-  register: mod_ssl_output
+    name: "Apache: Extract whether SSL is enabled"
+  ansible.builtin.shell: "{{ apache_binary_path }} -M | grep ssl"
+  register: apache_mod_ssl_output
   ignore_errors: true
   changed_when: no
 
@@ -92,28 +80,28 @@
 - <<: *task
   vars:
     taskid: 32-009
-    name: "Extract whether SSL is enabled"
-  set_fact:
-    is_ssl_active: "{{ 'true' if 'ssl_module' in mod_ssl_output.stdout else 'false' }}"
+    name: "Apache: Extract whether SSL is enabled"
+  ansible.builtin.set_fact:
+    apache_is_ssl_active: "{{ 'true' if 'ssl_module' in apache_mod_ssl_output.stdout else 'false' }}"
   changed_when: no
 
 # Extract all config file regexes
 - <<: *task
   vars:
     taskid: 32-009
-    name: "Extract config path regexes from main apache config"
+    name: "Apache: Extract config path regexes from main apache config"
   ansible.builtin.shell:
-    cmd: "grep -r '^Include' {{ config_file_name }} | awk '{printf \"/etc/httpd/%s\\n\", $2}'"
-  register: included_config_paths_out
+    cmd: "grep -r '^Include' {{ apache_config_file_name }} | awk '{printf \"/etc/httpd/%s\\n\", $2}'"
+  register: apache_included_config_paths_out
   ignore_errors: true
   changed_when: no
 
 - <<: *task
   vars:
     taskid: 32-009
-    name: "Extract config path regexes from main apache config"
-  set_fact:
-    included_config_paths: "{{ included_config_paths_out.stdout_lines }}"
+    name: "Apache: Extract config path regexes from main apache config"
+  ansible.builtin.set_fact:
+    apache_included_config_paths: "{{ apache_included_config_paths_out.stdout_lines }}"
   ignore_errors: true
   changed_when: no
 
@@ -121,21 +109,21 @@
 - <<: *task
   vars:
     taskid: 32-009
-    name: "Extract log paths from apache configs"
+    name: "Apache: Extract log paths from apache configs"
   ansible.builtin.shell:
     cmd: "grep -rhE '^ErrorLog\\|^CustomLog' {{ item }} | awk '{print $2}'"
-  loop: "{{ included_config_paths }}"
-  register: log_files_out
-  changed_when: false
+  loop: "{{ apache_included_config_paths }}"
+  register: apache_log_files_out
+  changed_when: no
   ignore_errors: true
   
 - <<: *task
   vars:
     taskid: 32-009
-    name: "Extract log paths from apache configs"
-  set_fact: 
-    log_files: "{{ log_files_out.results | map(attribute='stdout_lines') | flatten }}"
-  changed_when: false
+    name: "Apache: Extract log paths from apache configs"
+  ansible.builtin.set_fact: 
+    apache_log_files: "{{ apache_log_files_out.results | map(attribute='stdout_lines') | flatten }}"
+  changed_when: no
   ignore_errors: true
 
 # Add the default log paths to the list
@@ -143,38 +131,38 @@
 - <<: *task
   vars:
     taskid: 32-009
-    name: "Extract log paths from apache configs"
-  set_fact: 
-    log_files: "{{ log_files | default([]) + [
-                  '/var/log/{{ binary_name }}/error_log',
-                  '/var/log/{{ binary_name }}/access_log',
-                  '/var/log/{{ binary_name }}/ssl_engine_log',
-                  '/var/log/{{ binary_name }}/rewrite.log',
-                  '/var/log/{{ binary_name }}/debug.log'] 
+    name: "Apache: Extract log paths from apache configs"
+  ansible.builtin.set_fact: 
+    apache_log_files: "{{ apache_log_files | default([]) + [
+                  '/var/log/{{ apache_binary_name }}/error_log',
+                  '/var/log/{{ apache_binary_name }}/access_log',
+                  '/var/log/{{ apache_binary_name }}/ssl_engine_log',
+                  '/var/log/{{ apache_binary_name }}/rewrite.log',
+                  '/var/log/{{ apache_binary_name }}/debug.log'] 
                 }}"
-  changed_when: false
+  changed_when: no
   ignore_errors: true
     
 # Find all included .pem, .crt, .key, .csr files in all apache configs
 - <<: *task
   vars:
     taskid: 32-009
-    name: "Extract cert paths from apache configs"
+    name: "Apache: Extract cert paths from apache configs"
   ansible.builtin.shell:
     cmd: "grep -rhE '^(SSLCertificateFile|SSLCertificateKeyFile)' {{ item }} | awk '{print $2}'"
-  loop: "{{ included_config_paths }}"
-  register: cert_files_out
-  changed_when: false
+  loop: "{{ apache_included_config_paths }}"
+  register: apache_cert_files_out
+  changed_when: no
   ignore_errors: true
-  when: "is_ssl_active is defined and is_ssl_active"
+  when: "apache_is_ssl_active is defined and apache_is_ssl_active"
 
 - <<: *task
   vars:
     taskid: 32-009
-    name: "Extract cert paths from apache configs"
-  set_fact: 
-    cert_files: "{{ cert_files_out.results | map(attribute='stdout_lines') | flatten }}"
-  changed_when: false
+    name: "Apache: Extract cert paths from apache configs"
+  ansible.builtin.set_fact: 
+    apache_cert_files: "{{ apache_cert_files_out.results | map(attribute='stdout_lines') | flatten }}"
+  changed_when: no
   ignore_errors: true
 
 # Check if logrotate is working correctly for apache logs
@@ -183,12 +171,12 @@
 - <<: *task
   vars:
     taskid: 32-010
-    name: "Are there files in the apache log dir that are not rotated? | Find large files"
+    name: "Apache: Are there files in the apache log dir that are not rotated? | Find large files"
   ansible.builtin.find:
-    paths: "{{ log_files }}"
+    paths: "{{ apache_log_files }}"
     size: 16m
     follow: yes
-  register: linux_large_logfiles
+  register: apache_large_logfiles
   changed_when: no
 
 # Some of the files produced by the task above are sparse files, most notably /var/log/lastlog
@@ -196,99 +184,87 @@
 - <<: *task
   vars:
     taskid: 32-010
-    name: "Are there files in the apache log dir that are not rotated? | Find large files"
+    name: "Apache: Are there files in the apache log dir that are not rotated? | Find large files"
   ansible.builtin.stat:
     path: "{{ item }}"
     get_attributes: no
     get_checksum: no
     get_mime: no
-  loop: "{{ linux_large_logfiles.files | map(attribute='path') | list }}"
-  register: linux_large_logfiles_stat
+  loop: "{{ apache_large_logfiles.files | map(attribute='path') | list }}"
+  register: apache_large_logfiles_stat
   changed_when: no
 
 - <<: *task
   vars:
     taskid: 32-010
-    name: "Are there files in the apache log dir that are not rotated? | Find large files"
+    name: "Apache: Are there files in the apache log dir that are not rotated? | Find large files"
     # 4096 blocks equals 16M (assuming 4k logical blocksize, which is to be expected nowadays)
-    large_files: "{{ linux_large_logfiles_stat.results | map(attribute='stat') | selectattr('blocks', 'gt', 4096) | map(attribute='path') | list }}"
+    apache_large_files: "{{ apache_large_logfiles_stat.results | map(attribute='stat') | selectattr('blocks', 'gt', 4096) | map(attribute='path') | list }}"
   ansible.builtin.debug:
-    var: "large_files"
-  changed_when: "large_files | length > 0"
+    var: "apache_large_files"
+  changed_when: "apache_large_files | length > 0"
 
 # Check the used config file validity
 - <<: *task
   vars:
     taskid: 32-012
-    name: "Check apache configuration validity"
-  command: "{{ binary_path }} -t"
-  register: config_test
-  changed_when: "config_test.rc != 0"
+    name: "Apache: Check apache configuration validity"
+  command: "{{ apache_binary_path }} -t"
+  register: apache_config_test
+  changed_when: "apache_config_test.rc != 0"
 
-# SSL cert expiration
+# Test if cert is valid in one month
 - <<: *task
   vars:
     taskid: 32-014
-    name: "Get apache cert expiration dates"
-  shell:
-    cmd: "openssl x509 -in {{ item }} -noout -enddate | grep -o 'notAfter=.*'"
+    name: Test whether that certificate is valid in a month
+  community.crypto.x509_certificate_info:
+    path: "{{ item }}"
+    valid_at:
+      one_month_later: "+1m"
+  register: apache_cert_info
+  loop: "{{ apache_cert_files }}"
+  when: item.endswith(".crt")
   changed_when: no
-  register: crt_end_dates_out
-  loop: "{{ cert_files }}"
-  when: "is_ssl_active is defined and is_ssl_active and cert_files is defined and item.endswith('.crt') or item.endswith('.pem')"
 
 - <<: *task
   vars:
     taskid: 32-014
-    name: "Check apache cert expiration"
+    name: Test whether that certificate is valid in a month
   set_fact:
-    crt_expiry_dates: "{{ item.stdout | regex_replace('^notAfter=', '') | to_datetime('%b %d %H:%M:%S %Y %Z') }}"
-  loop: "{{ crt_end_dates_out.results }}"
-  when: "is_ssl_active is defined and is_ssl_active and crt_end_dates_out is defined and 'stdout' in item"
+      apache_cert_expires_soon: true
+  loop: "{{ apache_cert_info.results }}"
+  when: (item.valid_at.one_month_later | default(true)) == false
+  loop_control:
+    loop_var: item
   changed_when: no
 
-- <<: *task
-  vars:
-    taskid: 32-014
-    name: "Check apache cert expiration"
-  set_fact: 
-    crt_expiry_dates: "{{ [crt_expiry_dates] }}"
-  when: is_ssl_active is defined and is_ssl_active and crt_expiry_dates is defined and cry_expiry_dates | type_debug != 'list'
-
-- <<: *task
-  vars:
-    taskid: 32-014
-    name: "Calculate remaining validity period"
-  set_fact:
-    remaining_validity_days: "{{ ((item | to_datetime('%Y-%m-%d %H:%M:%S') ) - (ansible_date_time.date | to_datetime('%Y-%m-%d'))).days }}"
-  changed_when: no
-  loop: "{{ crt_expiry_dates }}"
-  when: "is_ssl_active is defined and is_ssl_active and crt_expiry_dates is defined"
-
-- <<: *task
-  vars:
-    taskid: 32-014
-    name: "Check if certificate will expire in 1 month"
+- name: Debug if any item has bool set to true
   debug:
-    msg: "Certificate will expire in less than a month"
-  when: is_ssl_active is defined and is_ssl_active and remaining_validity_days is defined and remaining_validity_days | int < 30
-  changed_when: no
+    msg: "At least one cert will expire in less than 1 month: {{ apache_cert_files }}"
+  changed_when: apache_cert_expires_soon | default(false)
+ 
+
+# Not printed out by default
+#- <<: *task
+#  vars:
+#    taskid: 32-009
+#    name: "Apache: Print apache run details"
+#  debug:
+#    msg:
+#      - "HTTPD root directory: {{ apache_root_directory if apache_root_directory is defined else 'Not defined' }}"
+#      - "Config file name: {{ apache_config_file_name if apache_config_file_name is defined else 'Not defined' }}"
+#      - "logfile names: {{ apache_log_files if apache_log_files is defined else 'Not defined' }}"
+#      - "Is SSL active: {{ apache_is_ssl_active if apache_is_ssl_active is defined else 'Not defined' }}"
+#      - "Included apache config paths: {{ apache_included_config_paths if apache_included_config_paths is defined else 'Not defined' }}"
+#      - "SSL cert paths: {{ apache_cert_files if apache_cert_files is defined else 'Not defined' }}"
+#  changed_when: no
 
 - <<: *task
   vars:
     taskid: 32-009
-    name: "Print apache run details"
+    name: "Apache: Print apache logfiles"
   debug:
     msg:
-      - "HTTPD root directory: {{ httpd_root_directory if httpd_root_directory is defined else 'Not defined' }}"
-      - "Config file name: {{ config_file_name if config_file_name is defined else 'Not defined' }}"
-      - "logfile names: {{ log_files if log_files is defined else 'Not defined' }}"
-      - "Is SSL active: {{ is_ssl_active if is_ssl_active is defined else 'Not defined' }}"
-      - "Included apache config paths: {{ included_config_paths if included_config_paths is defined else 'Not defined' }}"
-      - "SSL cert paths: {{ cert_files if cert_files is defined else 'Not defined' }}"
-      - "SSL cert expiry: {{ crt_expiry_dates if crt_expiry_dates is defined else 'Not defined' }}"
-      - "SSL cert remaining days: {{ remaining_validity_days if remaining_validity_days is defined else 'Not defined' }}"
-
-  changed_when: no
-
-
+      - "Please double check error logs for important error messages -> apache log paths: {{ apache_log_files if apache_log_files is defined else 'Not defined' }}"
+  changed_when: yes
