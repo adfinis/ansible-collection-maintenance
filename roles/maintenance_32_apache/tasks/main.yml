@@ -15,7 +15,7 @@
 - <<: *task
   vars:
     taskid: 32-009
-    name: "Apache: Gather details, set vars: set apache binary based on OS"  
+    name: "Apache: Gather details, set vars: set apache binary based on OS"
   ansible.builtin.include_vars: "{{ item }}"
   with_first_found:
     - "{{ ansible_facts.os_family }}.yml"
@@ -34,7 +34,7 @@
 - <<: *task
   vars:
     taskid: 32-009
-    name: "Apache: Get apache binary path used by apache systemd service"  
+    name: "Apache: Get apache binary path used by apache systemd service"
   ansible.builtin.set_fact:
     apache_binary_path: "{{ apache_exec_path_raw.stdout if (apache_exec_path_raw.stdout | length) > 0 else 'apachectl' }}"
   changed_when: no
@@ -116,12 +116,12 @@
   register: apache_log_files_out
   changed_when: no
   ignore_errors: true
-  
+
 - <<: *task
   vars:
     taskid: 32-009
     name: "Apache: Extract log paths from apache configs"
-  ansible.builtin.set_fact: 
+  ansible.builtin.set_fact:
     apache_log_files: "{{ apache_log_files_out.results | map(attribute='stdout_lines') | flatten }}"
   changed_when: no
   ignore_errors: true
@@ -132,17 +132,17 @@
   vars:
     taskid: 32-009
     name: "Apache: Extract log paths from apache configs"
-  ansible.builtin.set_fact: 
+  ansible.builtin.set_fact:
     apache_log_files: "{{ apache_log_files | default([]) + [
                   '/var/log/{{ apache_binary_name }}/error_log',
                   '/var/log/{{ apache_binary_name }}/access_log',
                   '/var/log/{{ apache_binary_name }}/ssl_engine_log',
                   '/var/log/{{ apache_binary_name }}/rewrite.log',
-                  '/var/log/{{ apache_binary_name }}/debug.log'] 
+                  '/var/log/{{ apache_binary_name }}/debug.log']
                 }}"
   changed_when: no
   ignore_errors: true
-    
+
 # Find all included .pem, .crt, .key, .csr files in all apache configs
 - <<: *task
   vars:
@@ -160,13 +160,13 @@
   vars:
     taskid: 32-009
     name: "Apache: Extract cert paths from apache configs"
-  ansible.builtin.set_fact: 
+  ansible.builtin.set_fact:
     apache_cert_files: "{{ apache_cert_files_out.results | map(attribute='stdout_lines') | flatten }}"
   changed_when: no
   ignore_errors: true
 
 # Check if logrotate is working correctly for apache logs
-# /var/log is also separately checked inside 
+# /var/log is also separately checked inside
 # the generic linux role
 - <<: *task
   vars:
@@ -209,7 +209,7 @@
   vars:
     taskid: 32-012
     name: "Apache: Check apache configuration validity"
-  command: "{{ apache_binary_path }} -t"
+  ansible.builtin.command: "{{ apache_binary_path }} -t"
   register: apache_config_test
   changed_when: "apache_config_test.rc != 0"
 
@@ -232,39 +232,38 @@
     taskid: 32-014
     name: Test whether that certificate is valid in a month
   ansible.builtin.set_fact:
-      apache_cert_expires_soon: true
+    apache_cert_expires_soon: true
   loop: "{{ apache_cert_info.results }}"
-  when: (item.valid_at.one_month_later | default(true)) == false
+  when: not (item.valid_at.one_month_later | default(true))
   loop_control:
     loop_var: item
   changed_when: no
 
 - name: Debug if any item has bool set to true
-  debug:
+  ansible.builtin.debug:
     msg: "At least one cert will expire in less than 1 month: {{ apache_cert_files }}"
   changed_when: apache_cert_expires_soon | default(false)
- 
 
-# Not printed out by default
-#- <<: *task
-#  vars:
-#    taskid: 32-009
-#    name: "Apache: Print apache run details"
-#  debug:
-#    msg:
-#      - "HTTPD root directory: {{ apache_root_directory if apache_root_directory is defined else 'Not defined' }}"
-#      - "Config file name: {{ apache_config_file_name if apache_config_file_name is defined else 'Not defined' }}"
-#      - "logfile names: {{ apache_log_files if apache_log_files is defined else 'Not defined' }}"
-#      - "Is SSL active: {{ apache_is_ssl_active if apache_is_ssl_active is defined else 'Not defined' }}"
-#      - "Included apache config paths: {{ apache_included_config_paths if apache_included_config_paths is defined else 'Not defined' }}"
-#      - "SSL cert paths: {{ apache_cert_files if apache_cert_files is defined else 'Not defined' }}"
-#  changed_when: no
+# Not printed out by default if you want to see for debugging, change changed_when to yes
+- <<: *task
+  vars:
+    taskid: 32-009
+    name: "Apache: Print apache run details"
+  ansible.builtin.debug:
+    msg:
+      - "HTTPD root directory: {{ apache_root_directory if apache_root_directory is defined else 'Not defined' }}"
+      - "Config file name: {{ apache_config_file_name if apache_config_file_name is defined else 'Not defined' }}"
+      - "logfile names: {{ apache_log_files if apache_log_files is defined else 'Not defined' }}"
+      - "Is SSL active: {{ apache_is_ssl_active if apache_is_ssl_active is defined else 'Not defined' }}"
+      - "Included apache config paths: {{ apache_included_config_paths if apache_included_config_paths is defined else 'Not defined' }}"
+      - "SSL cert paths: {{ apache_cert_files if apache_cert_files is defined else 'Not defined' }}"
+  changed_when: no
 
 - <<: *task
   vars:
     taskid: 32-009
     name: "Apache: Print apache logfiles"
-  debug:
+  ansible.builtin.debug:
     msg:
       - "Please double check error logs for important error messages -> apache log paths: {{ apache_log_files if apache_log_files is defined else 'Not defined' }}"
   changed_when: yes
