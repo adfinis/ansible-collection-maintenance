@@ -168,7 +168,6 @@
   when:
     - log_file not in logrotate_logs
     - log_name not in excluded_logs_per_host
-  #   - item.size > 2048  # Taille en bytes, 2048MB = 2048*1024*1024 bytes
 
 - <<: *task
   vars:
