@@ -51,8 +51,8 @@
     LC_ALL: C
   ansible.builtin.shell: "mount -av --fake | grep -Ev ': (ignored)|(already mounted)'"  # noqa risky-shell-pipe mount --fake is permitted to fail
   register: linux_mount_all
-  changed_when: no
-  check_mode: no
+  changed_when: false
+  check_mode: false
   failed_when: "linux_mount_all.rc not in [0, 1]"
 
 - <<: *task
@@ -71,9 +71,9 @@
     paths:
       - /var/log
     size: 16m
-    follow: yes
+    follow: true
   register: linux_large_logfiles
-  changed_when: no
+  changed_when: false
 
   # Some of the files produced by the task above are sparse files, most notably /var/log/lastlog
   # Use stat to figure out the actual on-disk size
@@ -83,12 +83,12 @@
     name: "Disk: logrotate: Are there files in /var/log that are not rotated? | Stat found files in /var/log"
   ansible.builtin.stat:
     path: "{{ item }}"
-    get_attributes: no
-    get_checksum: no
-    get_mime: no
+    get_attributes: false
+    get_checksum: false
+    get_mime: false
   loop: "{{ linux_large_logfiles.files | map(attribute='path') | list }}"
   register: linux_large_logfiles_stat
-  changed_when: no
+  changed_when: false
 
 - <<: *task
   vars:
@@ -107,7 +107,7 @@
   adfinis.maintenance.find:
     paths: "{{ ansible_facts.mounts | map(attribute='mount') | list }}"
     prune: "{{ linux_large_logfiles_prune + linux_additional_large_logfiles_prune }}"
-    xdev: yes
+    xdev: true
     type: file
     size: "+16M"
     age: "-{{ 60 * 24 * 7 * 2 }}"  # two weeks
@@ -116,36 +116,62 @@
 - <<: *task
   vars:
     taskid: 10-037
-    name: "Disk: logrotate: Are there files in /var/log that are not rotated?"
-  ansible.builtin.shell: "cat /var/lib/logrotate/logrotate.status"
+    name: "Logrotate: Are there large files that point to a too verbose service?"
+  ansible.builtin.slurp:
+    src: "{{ logrotate_status_file }}"
+  changed_when: false
   register: logrotate_output
-  tags:
-    - skip_ansible_lint
 
 - <<: *task
   vars:
     taskid: 10-037
-    name: "Disk: logrotate: Are there files in /var/log that are not rotated?"
+    name: "Logrotate: Are there large files that point to a too verbose service?"
+  ansible.builtin.set_fact:
+    logrotate_logs: "{{ logrotate_output.content | b64decode | split('\n') }}"
+
+- <<: *task
+  vars:
+    taskid: 10-037
+    name: "Logrotate: Are there large files that point to a too verbose service?"
   ansible.builtin.find:
     paths: /var/log
-    recurse: yes
+    recurse: true
     patterns: "*.log"
-  register: log_files
+    file_type: file
+  register: all_logs
 
 - <<: *task
   vars:
     taskid: 10-037
-    name: "Disk: logrotate: Are there files in /var/log that are not rotated?"
-  ansible.builtin.set_fact:
-    unrotated_files: "{{ log_files.files | rejectattr('path', 'in', logrotate_output.stdout_lines) | map(attribute='path') | list }}"
-
-- <<: *task
-  vars:
-    taskid: 10-037
-    name: "Disk: logrotate: Are there files in /var/log that are not rotated?"
+    name: "Logrotate: Are there large files that point to a too verbose service?"
   ansible.builtin.debug:
-    msg: "Files not managed by logrotate: {{ unrotated_files }}"
-  when: unrotated_files | length > 0
+    msg: "{{ all_logs.files | map(attribute='path') | list }}"
+
+- <<: *task
+  vars:
+    taskid: 10-037
+    name: "Logrotate: Are there large files that point to a too verbose service?"
+  ansible.builtin.set_fact:
+    unmanaged_logs: "{{ unmanaged_logs | default([]) + [log_name] }}"
+  loop: "{{ all_logs.files }}"
+  loop_control:
+    loop_var: item
+    logrotate_logs: "{{ (logrotate_status.content | b64decode).split('\n') }}"
+    log_name: "{{ item.path | basename }}"
+    log_file: "{{ log_name.split('.')[0] }}"
+  when:
+    - log_file not in logrotate_logs
+    - log_name not in excluded_logs_per_host
+  #   - item.size > 2048  # Taille en bytes, 2048MB = 2048*1024*1024 bytes
+
+- <<: *task
+  vars:
+    taskid: 10-037
+    name: "Logrotate: Are there large files that point to a too verbose service?"
+  ansible.builtin.debug:
+    msg: "Logs non répertoriés : {{ unmanaged_logs }}"
+  when: "unmanaged_logs | length > 0"
+  changed_when: "unmanaged_logs | length > 0"
 
 - <<: *task
   vars:
@@ -154,7 +180,7 @@
   ansible.builtin.stat:
     path: "/var/log/journal/{{ ansible_facts.machine_id }}/system.journal"
   register: linux_stat_system_journal
-  check_mode: yes
+  check_mode: true
 
 - <<: *task
   vars:
@@ -179,7 +205,7 @@
     grep '\\$' /etc/shadow | cut -d: -f1
   args:
     executable: /bin/bash  # -o pipefail is a bash feature
-  changed_when: no
+  changed_when: false
   register: linux_shadow_users
   failed_when: "linux_shadow_users.rc not in [0, 1]"
 
@@ -208,7 +234,7 @@
     allowed: "{{ linux_allowed_ssh_authorized_keys + linux_additional_ssh_authorized_keys }}"
     limit_nss_backends: "{{ linux_allowed_ssh_nss_backends }}"
     ignore_nss_backends: "{{ linux_allowed_ssh_ignored_nss_backends }}"
-  check_mode: yes
+  check_mode: true
 
 - <<: *task
   vars:
@@ -222,7 +248,7 @@
   when:
     - "'postfix' in ansible_facts.packages"
     - "vars.taskid not in maintenance_exclude_tasks"
-  check_mode: yes
+  check_mode: true
 
 - <<: *task
   vars:
