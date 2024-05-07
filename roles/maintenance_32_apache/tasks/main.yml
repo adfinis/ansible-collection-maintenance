@@ -82,7 +82,7 @@
     taskid: 32-009
     name: "Apache: Extract whether SSL is enabled"
   ansible.builtin.set_fact:
-    apache_is_ssl_active: "{{ 'true' if 'ssl_module' in apache_mod_ssl_output.stdout else 'false' }}"
+    apache_is_ssl_active: "{{ 'ssl_module' in apache_mod_ssl_output.stdout }}"
   changed_when: no
 
 # Extract all config file regexes
