@@ -156,6 +156,12 @@
   loop: "{{ all_logs.files }}"
   loop_control:
     loop_var: item
+
+- <<: *task
+  vars:
+    taskid: 10-037
+    name: "Logrotate: Are there large files that point to a too verbose service?"
+  ansible.builtin.set_fact:
     logrotate_logs: "{{ (logrotate_status.content | b64decode).split('\n') }}"
     log_name: "{{ item.path | basename }}"
     log_file: "{{ log_name.split('.')[0] }}"
