@@ -26,7 +26,9 @@
     service: files
 
 - name: Gather package facts
-  ansible.builtin.package_facts: {}
+  ansible.builtin.package_facts:
+    manager: auto
+    strategy: all
 
 - <<: *task
   vars:
@@ -198,3 +200,27 @@
   when: "'postfix' in ansible_facts.packages"
   changed_when: "task.rc == 2"  # rc == 2 => file doesn't exist
   failed_when: "task.rc == 1"  # rc == 1 => postalias failed
+
+- <<: *task
+  vars:
+    taskid: 10-067
+    name: "Netboxinventory: Make sure pkg list is populated"
+  ansible.builtin.fail:
+    msg: "Error: Pkg list from host is empty"
+  when: "ansible_facts.packages | length == 0"
+
+- <<: *task
+  vars:
+    taskid: 10-067
+    name: "Netboxinventory: Output pkg list to json"
+  delegate_to: localhost
+  ansible.builtin.lineinfile:
+    create: yes
+    mode: "0744"
+    path: "host_packages_collection-{{ ansible_date_time.date | string }}.txt"
+    insertafter: EOF
+    line: >-
+      {"Host": [
+      {"Hostname":  "{{ inventory_hostname }}"},
+      {"OS": "{{ hostvars[inventory_hostname].ansible_distribution }} {{ hostvars[inventory_hostname].ansible_distribution_version }}" },
+      {"Package list update": "{{ ansible_date_time.iso8601 }}", "Package list": [ {{ ansible_facts.packages | to_json }} ] } ] }
