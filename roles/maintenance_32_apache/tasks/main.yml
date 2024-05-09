@@ -149,7 +149,7 @@
     taskid: 32-009
     name: "Apache: Extract cert paths from apache configs"
   ansible.builtin.shell:
-    cmd: "grep -rhE '^(SSLCertificateFile|SSLCertificateKeyFile)' {{ item }} | awk '{print $2}'"
+    cmd: "grep -rhE '^(SSLCertificateFile|SSLCertificateChainFile)' {{ item }} | awk '{print $2}'"
   loop: "{{ apache_included_config_paths }}"
   register: apache_cert_files_out
   changed_when: no
@@ -224,7 +224,6 @@
       one_month_later: "+1m"
   register: apache_cert_info
   loop: "{{ apache_cert_files }}"
-  when: item.endswith(".crt")
   changed_when: no
 
 - <<: *task
