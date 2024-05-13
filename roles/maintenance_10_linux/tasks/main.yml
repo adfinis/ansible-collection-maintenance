@@ -116,25 +116,14 @@
 - <<: *task
   vars:
     taskid: 10-039
-    name: "Logfiles: Does journald log to persistent storage? | Check age of system journal"
-  ansible.builtin.stat:
-    path: "/var/log/journal/{{ ansible_facts.machine_id }}/system.journal"
-  register: linux_stat_system_journal
-  check_mode: yes
-
-- <<: *task
-  vars:
-    taskid: 10-039
-    name: "Logfiles: Does journald log to persistent storage? | Report age of system journal"
-  ansible.builtin.debug:
-    msg: >-
-      /var/log/journal/{{ ansible_facts.machine_id }}/system.journal
-      {% if not linux_stat_system_journal.stat.exists -%}
-      does not exist
-      {% else -%}
-      was last modified {{ '%Y-%m-%d %H:%M:%S' | strftime(linux_stat_system_journal.stat.mtime) }}
-      {% endif %}
-  changed_when: "not linux_stat_system_journal.stat.exists or (ansible_facts.date_time.epoch | int - linux_stat_system_journal.stat.mtime) > 3600 * 48"
+    name: "Logfiles: Ensure journald logs to persistent storage"
+  ansible.builtin.lineinfile:
+     dest: /etc/systemd/journald.conf
+     line: "Storage=persistent"
+     regexp: ".Storage=.*"
+     state: present
+  notify:
+    - restart journald
 
 - <<: *task
   vars:
