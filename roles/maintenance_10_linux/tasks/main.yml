@@ -118,10 +118,10 @@
     taskid: 10-039
     name: "Logfiles: Ensure journald logs to persistent storage"
   ansible.builtin.lineinfile:
-     dest: /etc/systemd/journald.conf
-     line: "Storage=persistent"
-     regexp: ".Storage=.*"
-     state: present
+    dest: /etc/systemd/journald.conf
+    line: "Storage=persistent"
+    regexp: ".Storage=.*"
+    state: present
   notify:
     - restart journald
 
