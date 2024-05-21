@@ -17,17 +17,8 @@
     taskid: 14-001
     name: "Apparmor: Check if apparmor is enabled and enforcing apparmor_status"
   ansible.builtin.command: aa-status
-  register: apparmor_status_output
-  changed_when: false
-  failed_when: false
-
-- <<: *task
-  vars:
-    taskid: 14-001
-    name: "Apparmor: Check if apparmor is enabled and enforcing apparmor_status"
-  ansible.builtin.debug:
-    msg: "{{ apparmor_status_output.stdout }}"
-  when: apparmor_status_output is succeeded
+  changed_when: "task.rc != 0"
+  failed_when: "task.rc == 4"  # Insufficient permission to check AA policies.
 
 - <<: *task
   vars:
@@ -44,8 +35,6 @@
   community.general.zypper:
     name: '*'
     update_cache: true
-  register: zypper_refresh_output
-  failed_when: "{{ zypper_refresh_output.rc != 0 }}"
 
 - <<: *task
   vars:
@@ -74,3 +63,4 @@
   ansible.builtin.debug:
     var: "sles_packages_status.stdout_lines"
   changed_when: "sles_packages_status.stdout_lines | length > 0"
+
