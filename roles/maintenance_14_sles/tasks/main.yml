@@ -63,4 +63,3 @@
   ansible.builtin.debug:
     var: "sles_packages_status.stdout_lines"
   changed_when: "sles_packages_status.stdout_lines | length > 0"
-
