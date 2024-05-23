@@ -118,8 +118,7 @@
     taskid: 10-037
     name: "Logrotate: Are there large files that point to a too verbose service?"
   ansible.builtin.slurp:
-    src: "{{ logrotate_status_file }}"
-  changed_when: false
+    src: "{{ linux_logrotate_status_file }}"
   register: logrotate_output
 
 - <<: *task
@@ -152,29 +151,21 @@
     taskid: 10-037
     name: "Logrotate: Are there large files that point to a too verbose service?"
   ansible.builtin.set_fact:
-    unmanaged_logs: "{{ unmanaged_logs | default([]) + [log_name] }}"
+    unmanaged_logs: "{{ unmanaged_logs | default([]) + [item.path] }}"
   loop: "{{ all_logs.files }}"
-  loop_control:
-    loop_var: item
-
-- <<: *task
-  vars:
-    taskid: 10-037
-    name: "Logrotate: Are there large files that point to a too verbose service?"
-  ansible.builtin.set_fact:
-    logrotate_logs: "{{ (logrotate_status.content | b64decode).split('\n') }}"
+  vars: # noqa both vars are required for the loop
     log_name: "{{ item.path | basename }}"
-    log_file: "{{ log_name.split('.')[0] }}"
+    log_file: "{{ (item.path | basename).split('.')[0] }}"
   when:
     - log_file not in logrotate_logs
-    - log_name not in excluded_logs_per_host
+    - log_name not in linux_excluded_logs_per_host
 
 - <<: *task
   vars:
     taskid: 10-037
     name: "Logrotate: Are there large files that point to a too verbose service?"
   ansible.builtin.debug:
-    msg: "Logs non répertoriés : {{ unmanaged_logs }}"
+    msg: "List of unrotated logs: {{ unmanaged_logs }}"
   when: "unmanaged_logs | length > 0"
   changed_when: "unmanaged_logs | length > 0"
 
