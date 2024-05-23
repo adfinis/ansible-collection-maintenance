@@ -1,4 +1,4 @@
 ---
 
 linux_allowed_login_since: -90days
-logrotate_status_file: "/var/lib/logrotate/logrotate.status"
+linux_logrotate_status_file: "/var/lib/logrotate/logrotate.status"
