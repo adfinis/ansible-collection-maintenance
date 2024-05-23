@@ -153,12 +153,6 @@
   ansible.builtin.set_fact:
     unmanaged_logs: "{{ unmanaged_logs | default([]) + [item.path] }}"
   loop: "{{ all_logs.files }}"
-  vars: # noqa
-    log_name: "{{ item.path | basename }}"
-    log_file: "{{ (item.path | basename).split('.')[0] }}"
-  when:
-    - log_file not in logrotate_logs
-    - log_name not in linux_excluded_logs_per_host
 
 - <<: *task
   vars:
