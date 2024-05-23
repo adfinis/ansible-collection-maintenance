@@ -52,4 +52,4 @@ linux_allowed_large_files:
 
 linux_additional_allowed_large_files: []
 
-excluded_logs_per_host: []
+linux_excluded_logs_per_host: []

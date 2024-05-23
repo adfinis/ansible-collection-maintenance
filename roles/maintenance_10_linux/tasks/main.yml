@@ -153,7 +153,7 @@
   ansible.builtin.set_fact:
     unmanaged_logs: "{{ unmanaged_logs | default([]) + [item.path] }}"
   loop: "{{ all_logs.files }}"
-  vars: # noqa both vars are required for the loop
+  vars: # noqa
     log_name: "{{ item.path | basename }}"
     log_file: "{{ (item.path | basename).split('.')[0] }}"
   when:
