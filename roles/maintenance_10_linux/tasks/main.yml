@@ -144,13 +144,7 @@
     taskid: 10-037
     name: "Logrotate: Are there large files that point to a too verbose service?"
   ansible.builtin.set_fact:
-    unmanaged_logs: >-
-     {{
-       all_logs.files
-       | rejectattr('path', 'in', logrotate_output.content | b64decode)
-       | map(attribute='path')
-       | list
-     }}
+    unmanaged_logs: "{{ all_logs.files | rejectattr('path', 'in', (logrotate_output.content | b64decode)) | map(attribute='path') | list }}"
 
 - <<: *task
   vars:
