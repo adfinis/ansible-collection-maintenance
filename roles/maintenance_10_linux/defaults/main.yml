@@ -51,3 +51,5 @@ linux_allowed_large_files:
   - "/var/log/lastlog"
 
 linux_additional_allowed_large_files: []
+
+linux_excluded_logs_per_host: []
