@@ -69,6 +69,7 @@
   ansible.builtin.shell:
     cmd: "nginx -T | awk '/ssl_certificate[^_]/ {print $2}' | rev | awk '{sub(/;/,\"\")}1' | rev"
   register: nginx_cert_files
+  ignore_errors: true
   changed_when: false
 
 - <<: *task
