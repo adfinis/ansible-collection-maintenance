@@ -16,7 +16,7 @@
     taskid: 31-010
     name: "Logrotate: Is there a working logrotate for all Nginx Logs"
   ansible.builtin.shell:
-    cmd: "nginx -T | awk '/log/ {print $2}'"
+    cmd: "nginx -T | awk '/log/ {print $2}' | rev | awk '{sub(/;/,\"\")}1' | rev"
   register: nginx_log_files
   ignore_errors: true
   changed_when: false
@@ -60,7 +60,8 @@
     taskid: 31-011
     name: "Error: Are ther any problematic messages in the error logs"
   ansible.builtin.debug:
-    msg: "Maybe"
+    msg: "Please double check error logs for important error messages -> {{  nginx_log_files.stdout_lines | default([]) | join(', ') }}"
+  changed_when: true
 
 - <<: *task
   vars:
