@@ -1,0 +1,115 @@
+---
+- name: This task only serves as a template for the tasks below
+  ansible.builtin.set_fact:
+    ignoreme: &task
+      name: "{{ vars.taskid }}: {{ vars.name }}"
+      register: task
+      when:
+        - "vars.taskid not in maintenance_exclude_tasks"
+        - "maintenance_only is not defined or maintenance_only == vars.taskid"
+  vars:
+    taskid: ignoreme
+    name: bar
+
+- <<: *task
+  vars:
+    taskid: 31-010
+    name: "Logrotate: Is there a working logrotate for all Nginx Logs"
+  ansible.builtin.shell:
+    cmd: "nginx -T | awk '/log/ {print $2}'"
+  register: nginx_log_files
+  changed_when: false
+
+- <<: *task
+  vars:
+    taskid: 31-010
+    name: "Logrotate: Is there a working logrotate for all Nginx Logs | large files"
+  ansible.builtin.find:
+    paths: "{{ nginx_log_files.stdout_lines }}"
+    size: 16m
+    follow: true
+  register: nginx_large_logfiles
+  changed_when: false
+
+- <<: *task
+  vars:
+    taskid: 31-010
+    name: "Logrotate: Is there a working logrotate for all Nginx Logs | large files"
+  ansible.builtin.stat:
+    path: "{{ item }}"
+    get_attributes: false
+    get_checksum: false
+    get_mime: false
+  loop: "{{ nginx_large_logfiles.files | map(attribute='path') | list }}"
+  register: nginx_large_logfiles_stat
+  changed_when: false
+
+- <<: *task
+  vars:
+    taskid: 31-010
+    name: "Logrotate: Is there a working logrotate for all Nginx Logs | large files"
+    nginx_large_files: "{{ nginx_large_logfiles_stat.results | map(attribute='stat') | selectattr('blocks', 'gt', 4096) | map(attribute='path') | list }}"
+  ansible.builtin.debug:
+    var: "nginx_large_files"
+  changed_when: "nginx_large_files | length > 0"
+
+
+- <<: *task
+  vars:
+    taskid: 31-011
+    name: "Error: Are ther any problematic messages in the error logs"
+  ansible.builtin.debug:
+    msg: "Maybe"
+
+- <<: *task
+  vars:
+    taskid: 31-014
+    name: "SSL: If in use, will SSL certificate be valid in a month"
+  ansible.builtin.shell:
+    cmd: "nginx -T | awk '/ssl_certificate[^_]/ {print $2}' | rev | awk '{sub(/;/,\"\")}1' | rev"
+  register: nginx_cert_files
+  changed_when: false
+
+- <<: *task
+  vars:
+    taskid: 31-014
+    name: "SSL: If in use, will SSL certificate be valid in a month"
+  ansible.builtin.slurp:
+    src: "{{ item }}"
+  loop: "{{ nginx_cert_files.stdout_lines }}"
+  register: nginx_cert_files_content
+  changed_when: false
+
+
+- <<: *task
+  vars:
+    taskid: 31-014
+    name: "SSL_ If in use, will SSL certificate be valid in a month"
+  community.crypto.x509_certificate_info:
+    content: "{{ item }}"
+    valid_at:
+      one_month_later: "+1m"
+  register: nginx_cert_info
+  loop: "{% set cert_content = [] %}{% for result in nginx_cert_files_content.results %}{% for data in ([(result.content | b64decode | community.crypto.split_pem)] | flatten) %}{% set cert_content = cert_content.append(data) %}{% endfor %}{% endfor %}{{ cert_content }}"
+  changed_when: false
+  delegate_to: localhost
+
+- <<: *task
+  vars:
+    taskid: 31-014
+    name:  "SSL_ If in use, will SSL certificate be valid in a month"
+  ansible.builtin.set_fact:
+    nginx_cert_expires_soon: true
+  loop: "{{ nginx_cert_info.results }}"
+  when: not (item.valid_at.one_month_later | default(true))
+  loop_control:
+    loop_var: item
+  changed_when: false
+
+- <<: *task
+  vars:
+    taskid: 31-014
+    name:  "SSL_ If in use, will SSL certificate be valid in a month"
+  ansible.builtin.debug:
+    msg: "At least one cert will expire in less than 1 month: {{ nginx_cert_files.stdout_lines }}"
+  changed_when: nginx_cert_expires_soon | default(false)
