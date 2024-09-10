@@ -18,6 +18,7 @@
   ansible.builtin.shell:
     cmd: "nginx -T | awk '/log/ {print $2}'"
   register: nginx_log_files
+  ignore_errors: true
   changed_when: false
 
 - <<: *task
@@ -92,12 +93,13 @@
   register: nginx_cert_info
   loop: "{% set cert_content = [] %}{% for result in nginx_cert_files_content.results %}{% for data in ([(result.content | b64decode | community.crypto.split_pem)] | flatten) %}{% set cert_content = cert_content.append(data) %}{% endfor %}{% endfor %}{{ cert_content }}"
   changed_when: false
+  ignore_errors: true
   delegate_to: localhost
 
 - <<: *task
   vars:
     taskid: 31-014
-    name:  "SSL_ If in use, will SSL certificate be valid in a month"
+    name: "SSL_ If in use, will SSL certificate be valid in a month"
   ansible.builtin.set_fact:
     nginx_cert_expires_soon: true
   loop: "{{ nginx_cert_info.results }}"
@@ -109,7 +111,7 @@
 - <<: *task
   vars:
     taskid: 31-014
-    name:  "SSL_ If in use, will SSL certificate be valid in a month"
+    name: "SSL_ If in use, will SSL certificate be valid in a month"
   ansible.builtin.debug:
     msg: "At least one cert will expire in less than 1 month: {{ nginx_cert_files.stdout_lines }}"
   changed_when: nginx_cert_expires_soon | default(false)
