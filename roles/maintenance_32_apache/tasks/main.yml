@@ -149,7 +149,7 @@
     taskid: 32-009
     name: "Apache: Extract cert paths from apache configs"
   ansible.builtin.shell:
-    cmd: "grep -rhE '^(SSLCertificateFile|SSLCertificateChainFile)' {{ item }} | awk '{print $2}'"
+    cmd: "grep -rhE '^\\s*(SSLCertificateFile|SSLCertificateChainFile)' {{ item }} | awk '{print $2}'"
   loop: "{{ apache_included_config_paths }}"
   register: apache_cert_files_out
   changed_when: false
@@ -218,13 +218,24 @@
   vars:
     taskid: 32-014
     name: Test whether that certificate is valid in a month
+  ansible.builtin.slurp:
+    src: "{{ item }}"
+  register: apache_cert_files_content
+  loop: "{{ apache_cert_files }}"
+  changed_when: false
+
+- <<: *task
+  vars:
+    taskid: 32-014
+    name: Test whether that certificate is valid in a month
   community.crypto.x509_certificate_info:
     content: "{{ item }}"
     valid_at:
       one_month_later: "+1m"
   register: apache_cert_info
-  loop: "{% set cert_content = [] %}{% for file in apache_cert_files %}{% for data in ([(lookup('ansible.builtin.file', file) | community.crypto.split_pem)] | flatten) %}{% set cert_content = cert_content.append(data) %}{% endfor %}{% endfor %}{{ cert_content }}"
+  loop: "{% set cert_content = [] %}{% for result in apache_cert_files_content.results %}{% for data in ([(result.content | b64decode | community.crypto.split_pem)] | flatten) %}{% set cert_content = cert_content.append(data) %}{% endfor %}{% endfor %}{{ cert_content }}"
   changed_when: false
+  delegate_to: localhost
 
 - <<: *task
   vars:
