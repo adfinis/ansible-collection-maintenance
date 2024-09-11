@@ -256,6 +256,7 @@
     taskid: 10-067
     name: "Netboxinventory: Output pkg list to json"
   delegate_to: localhost
+  become: false
   ansible.builtin.lineinfile:
     create: yes
     mode: "0744"
