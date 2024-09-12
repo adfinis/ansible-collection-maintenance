@@ -109,7 +109,6 @@
     name: "SSL_ If in use, will SSL certificate be valid in a month"
   ansible.builtin.debug:
     msg: "{{ item.not_after }}: {{ item.subject }}"
-  loop: "{{ nginx_cert_info.results }}"
   when: not (item.valid_at.one_month_later | default(true))
   changed_when: true
   loop: "{{ nginx_cert_info.results }}"
