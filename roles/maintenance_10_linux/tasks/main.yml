@@ -257,6 +257,7 @@
     name: "Netboxinventory: Output pkg list to json"
   delegate_to: localhost
   become: false
+  diff: false
   ansible.builtin.lineinfile:
     create: yes
     mode: "0744"
