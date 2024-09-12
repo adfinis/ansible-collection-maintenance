@@ -106,7 +106,7 @@
 - <<: *task
   vars:
     taskid: 31-014
-    name: "SSL_ If in use, will SSL certificate be valid in a month"
+    name: "SSL: If in use, will SSL certificate be valid in a month"
   ansible.builtin.debug:
     msg: "{{ item.not_after }}: {{ item.subject }}"
   when: not (item.valid_at.one_month_later | default(true))
