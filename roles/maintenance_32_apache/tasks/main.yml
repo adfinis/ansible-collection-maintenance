@@ -233,29 +233,25 @@
     valid_at:
       one_month_later: "+1m"
   register: apache_cert_info
-  loop: "{% set cert_content = [] %}{% for result in apache_cert_files_content.results %}{% for data in ([(result.content | b64decode | community.crypto.split_pem)] | flatten) %}{% set cert_content = cert_content.append(data) %}{% endfor %}{% endfor %}{{ cert_content }}"
+  loop: >-
+    {%- set cert_content = [] -%}
+    {%- for result in apache_cert_files_content.results -%}
+    {%- set cert_content = cert_content + ([(result.content | b64decode | community.crypto.split_pem)] | flatten) -%}
+    {%- endfor -%}
+    {{- cert_content -}}
   changed_when: false
+  ignore_errors: true
   delegate_to: localhost
 
 - <<: *task
   vars:
     taskid: 32-014
     name: Test whether that certificate is valid in a month
-  ansible.builtin.set_fact:
-    apache_cert_expires_soon: true
+  ansible.builtin.debug:
+    msg: "{{ item.not_after }}: {{ item.subject }}"
   loop: "{{ apache_cert_info.results }}"
   when: not (item.valid_at.one_month_later | default(true))
-  loop_control:
-    loop_var: item
-  changed_when: false
-
-- <<: *task
-  vars:
-    taskid: 32-014
-    name: Test wether that certificate is valid in a month
-  ansible.builtin.debug:
-    msg: "At least one cert will expire in less than 1 month: {{ apache_cert_files }}"
-  changed_when: apache_cert_expires_soon | default(false)
+  changed_when: true
 
 # Not printed out by default if you want to see for debugging, change changed_when to yes
 - <<: *task
