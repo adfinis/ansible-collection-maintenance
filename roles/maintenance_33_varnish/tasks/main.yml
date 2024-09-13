@@ -1,0 +1,82 @@
+---
+- name: This task only serves as a template for the tasks below
+  ansible.builtin.set_fact:
+    ignoreme: &task
+      name: "{{ vars.taskid }}: {{ vars.name }}"
+      register: task
+      when:
+        - "vars.taskid not in maintenance_exclude_tasks"
+        - "maintenance_only is not defined or maintenance_only == vars.taskid"
+  vars:
+    taskid: ignoreme
+    name: bar
+
+- <<: *task
+  vars:
+    taskid: 33-011
+    name: "Check which varnish configuration is active"
+  ansible.builtin.shell:
+    cmd: "systemctl show -p ExecStart varnish | grep 'ExecStart' | grep -oE '\\-f\\s*[a-z\\/\\.A-Z0-9]+' | grep -oE '[a-z\\/\\.A-Z0-9]{2,}'"
+  register: varnish_active_configfile
+  ignore_errors: true
+  changed_when: false
+- <<: *task
+  vars:
+    taskid: 33-011
+    name: "Check which varnish configuration is active"
+  ansible.builtin.stat:
+    path: "{{ varnish_active_configfile.stdout }}"
+  register: varnish_active_configfile_stat
+  ignore_errors: true
+  changed_when: not varnish_active_configfile_stat.stat.exists
+
+
+- <<: *task
+  vars:
+    taskid: 33-012
+    name: "Config: Are there any errors in this configuration?"
+  ansible.builtin.shell:
+    cmd: "varnishd -Cf {{ varnish_active_configfile.stdout }} > /dev/null 2>&1"
+  register: varnish_config_check
+  changed_when: varnish_config_check.rc not in [ 0 ]
+
+
+- <<: *task
+  vars:
+    taskid: 33-013
+    name: "Status: check output of varnishadm/varnishstat"
+  ansible.builtin.command:
+    cmd: "varnishadm status"
+  register: varnishadm_status_output
+  changed_when: varnishadm_status_output.stdout != "Child in state running"
+
+
+- <<: *task
+  vars:
+    taskid: 33-013
+    name: "Status: check output of varnishadm/varnishstat"
+  ansible.builtin.shell:
+    cmd: "varnishadm backend.list | sed '1d' | sed '/^$/d' | grep -vE '\\s+healthy\\s+'"
+  register: varnishadm_backend_healthy
+  ignore_error: true
+  failed_when: false
+  changed_when: varnishadm_backend_healthy.rc != 1
+
+- <<: *task
+  vars:
+    taskid: 33-014
+    name: "NCSA: Check if varnishncsa is active"
+  ansible.builtin.command:
+    cmd: "systemctl is-enabled varnishncsa"
+  register: varnishncsa_enabled
+  changed_when: varnishncsa_enabled.stdout != "enabled"
+
+- <<: *task
+  vars:
+    taskid: 33-014
+    name: "NCSA: Check if varnishncsa is active"
+  ansible.builtin.shell:
+    cmd: "systemctl status varnishncsa | grep 'Active' | grep -o 'running'"
+  register: varnishncsa_running
+  changed_when: varnishncsa_running.stdout != "running"
+  ignore_error: true
