@@ -113,7 +113,7 @@
     type: file
     size: "+16M"
     age: "-{{ 60 * 24 * 7 * 2 }}"  # two weeks
-    exclude: "{{ linux_allowed_large_files + linux_additional_allowed_large_files }}"
+    exclude: "{{ linux_allowed_large_files + linux_additional_allowed_large_files + linux_allow_var_log }}"
 
 - <<: *task
   vars:
