@@ -96,6 +96,8 @@
     taskid: 11-015
     name: "GPG-Keys: Are there errors because of not existing GPG Keys?"
   ansible.builtin.shell: apt-get update 2>&1 | grep -e 'Key is stored in legacy trusted.gpg keyring' -e 'GPG error:'  # noqa risky-shell-pipe
+  environment:
+    LC_ALL: C
   register: debian_apt_update_status
   changed_when: no
   check_mode: no
