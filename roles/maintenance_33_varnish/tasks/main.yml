@@ -63,15 +63,8 @@
   vars:
     taskid: 33-014
     name: "NCSA: Check if varnishncsa is active"
-  ansible.builtin.command:
-    cmd: "systemctl is-enabled varnishncsa"
-  changed_when: "task.stdout != 'enabled'"
-
-- <<: *task
-  vars:
-    taskid: 33-014
-    name: "NCSA: Check if varnishncsa is active"
-  ansible.builtin.shell:
-    cmd: "systemctl status varnishncsa | grep 'Active' | grep -o 'running'"
-  changed_when: "task.stdout != 'running'"
-  ignore_errors: true
+  ansible.builtin.service:
+    name: varnishncsa
+    state: started
+    enabled: true
+  check_mode: true
