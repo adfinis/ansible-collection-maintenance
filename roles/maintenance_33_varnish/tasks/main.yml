@@ -46,8 +46,7 @@
     name: "Status: check output of varnishadm/varnishstat"
   ansible.builtin.command:
     cmd: "varnishadm status"
-  register: varnishadm_status_output
-  changed_when: varnishadm_status_output.stdout != "Child in state running"
+  changed_when: "task.stdout != 'Child in state running'"
 
 
 - <<: *task
