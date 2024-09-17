@@ -37,8 +37,7 @@
     name: "Config: Are there any errors in this configuration?"
   ansible.builtin.shell:
     cmd: "varnishd -Cf {{ varnish_active_configfile.stdout }} > /dev/null 2>&1"
-  register: varnish_config_check
-  changed_when: varnish_config_check.rc not in [ 0 ]
+  changed_when: "task.rc != 0"
 
 
 - <<: *task
