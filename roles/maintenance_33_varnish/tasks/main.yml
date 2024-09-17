@@ -61,6 +61,37 @@
 
 - <<: *task
   vars:
+    taskid: 33-013
+    name: "Status: check output of varnishadm/varnishstat"
+  ansible.builtin.shell:
+    cmd: "varnishstat -1 -I MAIN.n_lru_nuked | awk '{if ($3 > 0.0) {exit 1}}'"
+  ignore_errors: true
+  failed_when: false
+  changed_when: "task.rc != 0"
+
+- <<: *task
+  vars:
+    taskid: 33-013
+    name: "Status: check output of varnishadm/varnishstat"
+  ansible.builtin.shell:
+    cmd: "varnishstat -1 -I MAIN.sess_dopped | awk '{if ($3 > 0.0) {exit 1}}'"
+  ignore_errors: true
+  failed_when: false
+  changed_when: "task.rc != 0"
+
+- <<: *task
+  vars:
+    taskid: 33-013
+    name: "Status: check output of varnishadm/varnishstat"
+  ansible.builtin.shell:
+    cmd: "varnishstat -1 -I MAIN.threads_limited | awk '{if ($3 > 0.0) {exit 1}}'"
+  ignore_errors: true
+  failed_when: false
+  changed_when: "task.rc != 0"
+
+
+- <<: *task
+  vars:
     taskid: 33-014
     name: "NCSA: Check if varnishncsa is active"
   ansible.builtin.service:
