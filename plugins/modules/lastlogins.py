@@ -109,7 +109,7 @@ bad_logins:
 from ansible.module_utils.basic import AnsibleModule
 
 import subprocess
-
+import ipaddress
 
 def run_module():
     # define available arguments/parameters a user can pass to the module
@@ -166,7 +166,13 @@ def run_module():
     # last -i shows 0.0.0.0 for local logins
     allowed_ips = ['0.0.0.0']
     if module.params['allowed_ips'] is not None:
-        allowed_ips.extend(module.params['allowed_ips'])
+        for allowed_ip in module.params['allowed_ips']:
+            allowed_ips.extend([str(ip) for ip in ipaddress.IPv4Network(allowed_ip)])
+
+    forbidden_ips = []
+    if module.params['forbidden_ips'] is not None:
+        for forbidden_ip in module.params['forbidden_ips']:
+            forbidden_ips.extend([str(ip) for ip in ipaddress.IPv4Network(forbidden_ip)])
 
     for line in out.decode('utf-8').splitlines():
         if line.startswith('reboot') or line[1:].startswith('tmp begins') or len(line) == 0:
@@ -182,16 +188,16 @@ def run_module():
             bad_logins.append(line)
         elif module.params['forbidden_users'] is not None and user in module.params['forbidden_users']:
             bad_logins.append(line)
-        elif module.params['allowed_ips'] is not None and ip not in allowed_ips:
+        elif ip not in allowed_ips:
             bad_logins.append(line)
-        elif module.params['forbidden_ips'] is not None and ip in module.params['forbidden_ips']:
+        elif ip in forbidden_ips:
             bad_logins.append(line)
 
     result['last_logins'] = last_logins
     result['bad_logins'] = bad_logins
 
     # Report bad logins, if any, as diff, ellipsized to 10 entries
-    
+
     result['changed'] = len(bad_logins) > 0
     if len(bad_logins) == 0:
         after = ''
