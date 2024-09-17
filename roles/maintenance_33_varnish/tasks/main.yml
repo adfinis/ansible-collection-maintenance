@@ -66,8 +66,7 @@
     name: "NCSA: Check if varnishncsa is active"
   ansible.builtin.command:
     cmd: "systemctl is-enabled varnishncsa"
-  register: varnishncsa_enabled
-  changed_when: varnishncsa_enabled.stdout != "enabled"
+  changed_when: "task.stdout != 'enabled'"
 
 - <<: *task
   vars:
