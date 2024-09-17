@@ -16,7 +16,7 @@
     taskid: 33-011
     name: "Check which varnish configuration is active"
   ansible.builtin.shell:
-    cmd: "systemctl show -p ExecStart varnish | grep 'ExecStart' | grep -oE '\\-f\\s*[a-z\\/\\.A-Z0-9]+' | grep -oE '[a-z\\/\\.A-Z0-9]{2,}'"
+    cmd: "systemctl show -p ExecStart varnish | grep -oE '\\-f\\s*[a-z\\/\\.A-Z0-9]+' | grep -oE '[a-z\\/\\.A-Z0-9]{2,}'"
   register: varnish_active_configfile
   ignore_errors: true
   changed_when: false
