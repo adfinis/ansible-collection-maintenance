@@ -55,10 +55,9 @@
     name: "Status: check output of varnishadm/varnishstat"
   ansible.builtin.shell:
     cmd: "varnishadm backend.list | sed '1d' | sed '/^$/d' | grep -vE '\\s+healthy\\s+'"
-  register: varnishadm_backend_healthy
   ignore_errors: true
   failed_when: false
-  changed_when: varnishadm_backend_healthy.rc != 1
+  changed_when: "task.rc != 1"
 
 - <<: *task
   vars:
