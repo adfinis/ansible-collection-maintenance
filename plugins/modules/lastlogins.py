@@ -47,12 +47,12 @@ options:
         default: null
         type: list
     allowed_ips:
-        description: List of source IPs from which log in is allowed.
+        description: List of source IPs (or CIDR ranges) from which log in is allowed.
         required: false
         default: null
         type: list
     forbidden_ips:
-        description: List of source IPs from which log in is forbidden.
+        description: List of source IPs (or CIDR ranges) from which log in is forbidden.
         required: false
         default: null
         type: list
