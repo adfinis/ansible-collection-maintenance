@@ -4,7 +4,7 @@ maintenance_global_exclude_tasks: []
 maintenance_host_exclude_tasks: []
 maintenance_exclude_tasks: "{{ maintenance_global_exclude_tasks + maintenance_host_exclude_tasks }}"
 
-debian_sources_list_security_uri: http://pkg.adfinis-on-exoscale.ch/debian/
+debian_sources_list_repository_uri: http://pkg.adfinis-on-exoscale.ch/debian/
 
 debian_sources_list_security_uri: http://security.debian.org/debian-security
 debian_sources_list_security_suite: |-
