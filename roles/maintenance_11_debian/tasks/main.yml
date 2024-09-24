@@ -35,6 +35,23 @@
 
 - <<: *task
   vars:
+    taskid: 11-011
+    name: "Repository: Are the repository in the sources.list set correctly?"
+  check_mode: yes
+  ansible.builtin.assert:
+    that: >-
+      ansible_facts.apt_sources
+      | selectattr('uri', 'eq', debian_sources_list_repository_uri)
+      | selectattr('types', 'contains', 'deb')
+      | selectattr('components', 'contains', 'main')
+      | length > 0
+    fail_msg: >-
+      debian repository missing: deb {{ debian_sources_list_repository_uri }} {{ debian_sources_list_repository_suite }} main
+  changed_when: task.failed
+  failed_when: no
+
+- <<: *task
+  vars:
     taskid: 11-012
     name: "Repository: Check if repository is set to release name (e.g. 'bullseye') and not to 'stable' | Check all sources.list files"
     source_entry: "{{ item.1.filename }}: {{ item.1.uri }} {{ item.1.suites }} -> {{ ansible_facts.distribution_release }}"
