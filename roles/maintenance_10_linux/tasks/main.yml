@@ -154,7 +154,10 @@
     name: "Logrotate: Are there large files that point to a too verbose service?"
   ansible.builtin.debug:
     msg: "List of unrotated logs: {{ unmanaged_logs }}"
-  when: "unmanaged_logs | length > 0"
+  when:
+    - "vars.taskid not in maintenance_exclude_tasks"
+    - "maintenance_only is not defined or maintenance_only == vars.taskid"
+    - "unmanaged_logs | length > 0"
   changed_when: "unmanaged_logs | length > 0"
 
 - <<: *task
@@ -230,8 +233,9 @@
     line: "root: {{ linux_serverlogs_root_alias }}"
     insertbefore: EOF
   when:
-    - "'postfix' in ansible_facts.packages"
     - "vars.taskid not in maintenance_exclude_tasks"
+    - "maintenance_only is not defined or maintenance_only == vars.taskid"
+    - "'postfix' in ansible_facts.packages"
   check_mode: true
 
 - <<: *task
@@ -239,7 +243,10 @@
     taskid: 10-051
     name: "Mail: aliases.db: Make sure /etc/aliases.db is up to date"
   ansible.builtin.shell: "[ -f /etc/aliases ] && postalias /etc/aliases || exit 2"
-  when: "'postfix' in ansible_facts.packages"
+  when:
+    - "vars.taskid not in maintenance_exclude_tasks"
+    - "maintenance_only is not defined or maintenance_only == vars.taskid"
+    - "'postfix' in ansible_facts.packages"
   changed_when: "task.rc == 2"  # rc == 2 => file doesn't exist
   failed_when: "task.rc == 1"  # rc == 1 => postalias failed
 
@@ -249,7 +256,10 @@
     name: "Netboxinventory: Make sure pkg list is populated"
   ansible.builtin.fail:
     msg: "Error: Pkg list from host is empty"
-  when: "ansible_facts.packages | length == 0"
+  when:
+    - "vars.taskid not in maintenance_exclude_tasks"
+    - "maintenance_only is not defined or maintenance_only == vars.taskid"
+    - "ansible_facts.packages | length == 0"
 
 - <<: *task
   vars:
