@@ -20,10 +20,10 @@
 
 # Get the exact binary path from the systemd service
 - name: "Apache: Gather details, set vars: query systemd service for binary name being used"
-  ansible.builtin.shell: "systemctl show -p ExecStart {{ apache_binary_name }} | awk '{print $2}' | cut -d= -f2"
+  ansible.builtin.shell: "systemctl show -p ExecStart {{ apache_binary_name }} | awk '{print $2}' | cut -d= -f2"  # noqa risky-shell-pipe  never fails
   register: apache_exec_path_raw
   changed_when: false
-  ignore_errors: true
+  failed_when: false
 
 - name: "Apache: Get apache binary path used by apache systemd service"
   ansible.builtin.set_fact:
@@ -50,10 +50,9 @@
 
 # Extract whether SSL is enabled
 - name: "Apache: Extract whether SSL is enabled"
-  ansible.builtin.shell: "{{ apache_binary_path }} -M | grep ssl"
+  ansible.builtin.shell: "{{ apache_binary_path }} -M | grep ssl"  # noqa risky-shell-pipe  never fails
   register: apache_mod_ssl_output
   failed_when: false
-  ignore_errors: true
   changed_when: false
 
 # Extract whether SSL is enabled
@@ -65,31 +64,31 @@
 # Extract all config file regexes
 - name: "Apache: Extract config path regexes from main apache config"
   ansible.builtin.shell:
-    cmd: "grep -r '^Include' {{ apache_config_file_name }} | awk '(substr($2,0,1) != \"/\"){printf \"{{ apache_root_directory + '/' }}\"}{print $2}'"
+    cmd: "grep -r '^Include' {{ apache_config_file_name }} | awk '(substr($2,0,1) != \"/\"){printf \"{{ apache_root_directory + '/' }}\"}{print $2}'"  # noqa risky-shell-pipe  never fails
   register: apache_included_config_paths_out
-  ignore_errors: true
+  failed_when: apache_config_file_name is not defined
   changed_when: false
 
 - name: "Apache: Extract config path regexes from main apache config"
   ansible.builtin.set_fact:
     apache_included_config_paths: "{{ [apache_config_file_name] + apache_included_config_paths_out.stdout_lines }}"
-  ignore_errors: true
+  failed_when: apache_included_config_paths_out is not defined
   changed_when: false
 
 # Find all included error log files in all configs
 - name: "Apache: Extract log paths from apache configs"
   ansible.builtin.shell:
-    cmd: "grep -rhE '^\\s*ErrorLog|^\\s*CustomLog' {{ item }} | awk '(substr($2,0,1) != \"/\" && substr($2,0,1) != \"$\"){printf \"{{ apache_root_directory + '/' }}\"}{gsub(/\"/,\"\",$2); print $2}'"
+    cmd: "grep -rhE '^\\s*ErrorLog|^\\s*CustomLog' {{ item }} | awk '(substr($2,0,1) != \"/\" && substr($2,0,1) != \"$\"){printf \"{{ apache_root_directory + '/' }}\"}{gsub(/\"/,\"\",$2); print $2}'"  # noqa risky-shell-pipe  never fails
   loop: "{{ apache_included_config_paths }}"
   register: apache_log_files_out
+  failed_when: false
   changed_when: false
-  ignore_errors: true
 
 - name: "Apache: Extract log paths from apache configs"
   ansible.builtin.set_fact:
     apache_log_files: "{{ apache_log_files_out.results | map(attribute='stdout_lines') | flatten }}"
   changed_when: false
-  ignore_errors: true
+  failed_when: apache_log_files_out is not defined
 
 - name: "Apache: Extract log paths from apache configs"
   ansible.builtin.shell:
@@ -104,24 +103,24 @@
   ansible.builtin.set_fact:
     apache_log_files: "{{ apache_log_files_correct.results | map(attribute='stdout_lines') | flatten }}"
   changed_when: false
-  ignore_errors: true
+  failed_when: apache_log_files_correct is not defined
   when: ansible_facts['os_family'] == 'Debian'
 
 # Find all included .pem, .crt, .key, .csr files in all apache configs
 - name: "Apache: Extract cert paths from apache configs"
   ansible.builtin.shell:
-    cmd: "grep -rhE '^\\s*(SSLCertificateFile|SSLCertificateChainFile)' {{ item }} | awk '{print $2}'"
+    cmd: "grep -rhE '^\\s*(SSLCertificateFile|SSLCertificateChainFile)' {{ item }} | awk '{print $2}'"  # noqa risky-shell-pipe  never fails
   loop: "{{ apache_included_config_paths }}"
   register: apache_cert_files_out
   changed_when: false
-  ignore_errors: true
+  failed_when: false
   when: "apache_is_ssl_active is defined and apache_is_ssl_active"
 
 - name: "Apache: Extract cert paths from apache configs"
   ansible.builtin.set_fact:
     apache_cert_files: "{{ apache_cert_files_out.results | map(attribute='stdout_lines') | select('defined') | flatten | default([]) }}"
   changed_when: false
-  ignore_errors: true
+  failed_when: apache_cert_files_out is not defined
 
 # Check if logrotate is working correctly for apache logs
 # /var/log is also separately checked inside
@@ -198,7 +197,7 @@
     {%- endfor -%}
     {{- cert_content -}}
   changed_when: false
-  ignore_errors: true
+  failed_when: false
   delegate_to: localhost
 
 - <<: *task
