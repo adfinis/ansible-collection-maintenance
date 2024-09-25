@@ -47,12 +47,12 @@ options:
         default: null
         type: list
     allowed_ips:
-        description: List of source IPs from which log in is allowed.
+        description: List of source IPs (or CIDR ranges) from which log in is allowed.
         required: false
         default: null
         type: list
     forbidden_ips:
-        description: List of source IPs from which log in is forbidden.
+        description: List of source IPs (or CIDR ranges) from which log in is forbidden.
         required: false
         default: null
         type: list
@@ -109,7 +109,7 @@ bad_logins:
 from ansible.module_utils.basic import AnsibleModule
 
 import subprocess
-
+import ipaddress
 
 def run_module():
     # define available arguments/parameters a user can pass to the module
@@ -167,6 +167,9 @@ def run_module():
     allowed_ips = ['0.0.0.0']
     if module.params['allowed_ips'] is not None:
         allowed_ips.extend(module.params['allowed_ips'])
+    forbidden_ips = []
+    if module.params['forbidden_ips'] is not None:
+        forbidden_ips.extend(module.params['forbidden_ips'])
 
     for line in out.decode('utf-8').splitlines():
         if line.startswith('reboot') or line[1:].startswith('tmp begins') or len(line) == 0:
@@ -182,16 +185,16 @@ def run_module():
             bad_logins.append(line)
         elif module.params['forbidden_users'] is not None and user in module.params['forbidden_users']:
             bad_logins.append(line)
-        elif module.params['allowed_ips'] is not None and ip not in allowed_ips:
+        elif not any(ipaddress.ip_address(ip) in ipaddress.ip_network(allowed_ip) for allowed_ip in allowed_ips):
             bad_logins.append(line)
-        elif module.params['forbidden_ips'] is not None and ip in module.params['forbidden_ips']:
+        elif any(ipaddress.ip_address(ip) in ipaddress.ip_network(forbidden_ip) for forbidden_ip in forbidden_ips):
             bad_logins.append(line)
 
     result['last_logins'] = last_logins
     result['bad_logins'] = bad_logins
 
     # Report bad logins, if any, as diff, ellipsized to 10 entries
-    
+
     result['changed'] = len(bad_logins) > 0
     if len(bad_logins) == 0:
         after = ''
