@@ -52,6 +52,7 @@
 - name: "Apache: Extract whether SSL is enabled"
   ansible.builtin.shell: "{{ apache_binary_path }} -M | grep ssl"
   register: apache_mod_ssl_output
+  failed_when: false
   ignore_errors: true
   changed_when: false
 
@@ -71,14 +72,14 @@
 
 - name: "Apache: Extract config path regexes from main apache config"
   ansible.builtin.set_fact:
-    apache_included_config_paths: "{{ apache_included_config_paths_out.stdout_lines }}"
+    apache_included_config_paths: "{{ [apache_config_file_name] + apache_included_config_paths_out.stdout_lines }}"
   ignore_errors: true
   changed_when: false
 
 # Find all included error log files in all configs
 - name: "Apache: Extract log paths from apache configs"
   ansible.builtin.shell:
-    cmd: "grep -rhE '^ErrorLog\\|^CustomLog' {{ item }} | awk '{print $2}'"
+    cmd: "grep -rhE '^\\s*ErrorLog|^\\s*CustomLog' {{ item }} | awk '(substr($2,0,1) != \"/\" && substr($2,0,1) != \"$\"){printf \"{{ apache_root_directory + '/' }}\"}{gsub(/\"/,\"\",$2); print $2}'"
   loop: "{{ apache_included_config_paths }}"
   register: apache_log_files_out
   changed_when: false
@@ -90,19 +91,21 @@
   changed_when: false
   ignore_errors: true
 
-# Add the default log paths to the list
-# There might also be module specific ones in this list
+- name: "Apache: Extract log paths from apache configs"
+  ansible.builtin.shell:
+    cmd: "source {{ apache_root_directory }}/envvars; echo {{ item }}"
+    executable: "/bin/bash"
+  loop: "{{ apache_log_files }}"
+  register: apache_log_files_correct
+  changed_when: false
+  when: ansible_facts['os_family'] == 'Debian'
+
 - name: "Apache: Extract log paths from apache configs"
   ansible.builtin.set_fact:
-    apache_log_files: "{{ apache_log_files | default([]) + [
-                  '/var/log/{{ apache_binary_name }}/error_log',
-                  '/var/log/{{ apache_binary_name }}/access_log',
-                  '/var/log/{{ apache_binary_name }}/ssl_engine_log',
-                  '/var/log/{{ apache_binary_name }}/rewrite.log',
-                  '/var/log/{{ apache_binary_name }}/debug.log']
-                }}"
+    apache_log_files: "{{ apache_log_files_correct.results | map(attribute='stdout_lines') | flatten }}"
   changed_when: false
   ignore_errors: true
+  when: ansible_facts['os_family'] == 'Debian'
 
 # Find all included .pem, .crt, .key, .csr files in all apache configs
 - name: "Apache: Extract cert paths from apache configs"
@@ -116,7 +119,7 @@
 
 - name: "Apache: Extract cert paths from apache configs"
   ansible.builtin.set_fact:
-    apache_cert_files: "{{ apache_cert_files_out.results | map(attribute='stdout_lines') | flatten }}"
+    apache_cert_files: "{{ apache_cert_files_out.results | map(attribute='stdout_lines') | select('defined') | flatten | default([]) }}"
   changed_when: false
   ignore_errors: true
 
@@ -128,7 +131,7 @@
     taskid: 32-010
     name: "Apache: Are there files in the apache log dir that are not rotated? | Find large files"
   ansible.builtin.find:
-    paths: "{{ apache_log_files }}"
+    paths: "{{ apache_log_files | map('dirname') | unique | list }}"
     size: 16m
     follow: true
   register: apache_large_logfiles
