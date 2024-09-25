@@ -12,104 +12,71 @@
     name: bar
 
 # Include OS specific vars to get binary name: apache_binary_name, httpd or apache2
-- <<: *task
-  vars:
-    taskid: 32-009
-    name: "Apache: Gather details, set vars: set apache binary based on OS"
+- name: "Apache: Gather details, set vars: set apache binary based on OS"
   ansible.builtin.include_vars: "{{ item }}"
   with_first_found:
     - "{{ ansible_facts.os_family }}.yml"
   changed_when: false
 
 # Get the exact binary path from the systemd service
-- <<: *task
-  vars:
-    taskid: 32-009
-    name: "Apache: Gather details, set vars: query systemd service for binary name being used"
-  ansible.builtin.shell: "systemctl show -p ExecStart {{ apache_binary_name }} | grep 'ExecStart' | awk '{print $2}' | cut -d= -f2"
+- name: "Apache: Gather details, set vars: query systemd service for binary name being used"
+  ansible.builtin.shell: "systemctl show -p ExecStart {{ apache_binary_name }} | awk '{print $2}' | cut -d= -f2"
   register: apache_exec_path_raw
   changed_when: false
   ignore_errors: true
 
-- <<: *task
-  vars:
-    taskid: 32-009
-    name: "Apache: Get apache binary path used by apache systemd service"
+- name: "Apache: Get apache binary path used by apache systemd service"
   ansible.builtin.set_fact:
     apache_binary_path: "{{ apache_exec_path_raw.stdout if (apache_exec_path_raw.stdout | length) > 0 else 'apachectl' }}"
   changed_when: false
 
-- <<: *task
-  vars:
-    taskid: 32-009
-    name: "Apache: Get apache run details"
+- name: "Apache: Get apache run details"
   ansible.builtin.shell: "{{ apache_binary_path }} -V && {{ apache_binary_path }} -S"
   register: apache_details
   changed_when: false
 
 # Extract HTTP root directory
-- <<: *task
-  vars:
-    taskid: 32-009
-    name: "Apache: Extract HTTP root directory"
+- name: "Apache: Extract HTTP root directory"
   ansible.builtin.set_fact:
     apache_root_directory: "{{ apache_details.stdout | regex_search('HTTPD_ROOT=\"([^\"]+)\"') | replace('\"', '') | split('=') | last }}"
   when: "'HTTPD_ROOT' in apache_details.stdout"
   changed_when: false
 
 # Extract main server config file path
-- <<: *task
-  vars:
-    taskid: 32-009
-    name: "Apache: Extract server config file path"
+- name: "Apache: Extract server config file path"
   ansible.builtin.set_fact:
     apache_config_file_name: "{{ apache_root_directory + '/' + apache_details.stdout | regex_search('SERVER_CONFIG_FILE=\"([^\"]+)\"') | replace('\"', '') | split('=') | last }}"
   changed_when: false
 
 # Extract whether SSL is enabled
-- <<: *task
-  vars:
-    taskid: 32-009
-    name: "Apache: Extract whether SSL is enabled"
+- name: "Apache: Extract whether SSL is enabled"
   ansible.builtin.shell: "{{ apache_binary_path }} -M | grep ssl"
   register: apache_mod_ssl_output
   ignore_errors: true
   changed_when: false
 
 # Extract whether SSL is enabled
-- <<: *task
-  vars:
-    taskid: 32-009
-    name: "Apache: Extract whether SSL is enabled"
+- name: "Apache: Extract whether SSL is enabled"
   ansible.builtin.set_fact:
     apache_is_ssl_active: "{{ 'ssl_module' in apache_mod_ssl_output.stdout }}"
   changed_when: false
 
 # Extract all config file regexes
-- <<: *task
-  vars:
-    taskid: 32-009
-    name: "Apache: Extract config path regexes from main apache config"
+- name: "Apache: Extract config path regexes from main apache config"
   ansible.builtin.shell:
     cmd: "grep -r '^Include' {{ apache_config_file_name }} | awk '(substr($2,0,1) != \"/\"){printf \"{{ apache_root_directory + '/' }}\"}{print $2}'"
   register: apache_included_config_paths_out
   ignore_errors: true
   changed_when: false
 
-- <<: *task
-  vars:
-    taskid: 32-009
-    name: "Apache: Extract config path regexes from main apache config"
+- name: "Apache: Extract config path regexes from main apache config"
   ansible.builtin.set_fact:
     apache_included_config_paths: "{{ apache_included_config_paths_out.stdout_lines }}"
   ignore_errors: true
   changed_when: false
 
 # Find all included error log files in all configs
-- <<: *task
-  vars:
-    taskid: 32-009
-    name: "Apache: Extract log paths from apache configs"
+- name: "Apache: Extract log paths from apache configs"
   ansible.builtin.shell:
     cmd: "grep -rhE '^ErrorLog\\|^CustomLog' {{ item }} | awk '{print $2}'"
   loop: "{{ apache_included_config_paths }}"
@@ -117,10 +84,7 @@
   changed_when: false
   ignore_errors: true
 
-- <<: *task
-  vars:
-    taskid: 32-009
-    name: "Apache: Extract log paths from apache configs"
+- name: "Apache: Extract log paths from apache configs"
   ansible.builtin.set_fact:
     apache_log_files: "{{ apache_log_files_out.results | map(attribute='stdout_lines') | flatten }}"
   changed_when: false
@@ -128,10 +92,7 @@
 
 # Add the default log paths to the list
 # There might also be module specific ones in this list
-- <<: *task
-  vars:
-    taskid: 32-009
-    name: "Apache: Extract log paths from apache configs"
+- name: "Apache: Extract log paths from apache configs"
   ansible.builtin.set_fact:
     apache_log_files: "{{ apache_log_files | default([]) + [
                   '/var/log/{{ apache_binary_name }}/error_log',
@@ -144,10 +105,7 @@
   ignore_errors: true
 
 # Find all included .pem, .crt, .key, .csr files in all apache configs
-- <<: *task
-  vars:
-    taskid: 32-009
-    name: "Apache: Extract cert paths from apache configs"
+- name: "Apache: Extract cert paths from apache configs"
   ansible.builtin.shell:
     cmd: "grep -rhE '^\\s*(SSLCertificateFile|SSLCertificateChainFile)' {{ item }} | awk '{print $2}'"
   loop: "{{ apache_included_config_paths }}"
@@ -156,10 +114,7 @@
   ignore_errors: true
   when: "apache_is_ssl_active is defined and apache_is_ssl_active"
 
-- <<: *task
-  vars:
-    taskid: 32-009
-    name: "Apache: Extract cert paths from apache configs"
+- name: "Apache: Extract cert paths from apache configs"
   ansible.builtin.set_fact:
     apache_cert_files: "{{ apache_cert_files_out.results | map(attribute='stdout_lines') | flatten }}"
   changed_when: false
@@ -254,10 +209,7 @@
   changed_when: true
 
 # Not printed out by default if you want to see for debugging, change changed_when to yes
-- <<: *task
-  vars:
-    taskid: 32-009
-    name: "Apache: Print apache run details"
+- name: "Apache: Print apache run details"
   ansible.builtin.debug:
     msg:
       - "HTTPD root directory: {{ apache_root_directory if apache_root_directory is defined else 'Not defined' }}"
@@ -270,8 +222,8 @@
 
 - <<: *task
   vars:
-    taskid: 32-009
-    name: "Apache: Print apache logfiles"
+    taskid: 32-011
+    name: "Apache: Are there any problematic messages in the error logs?"
   ansible.builtin.debug:
     msg:
       - "Please double check error logs for important error messages -> apache log paths: {{ apache_log_files if apache_log_files is defined else 'Not defined' }}"
