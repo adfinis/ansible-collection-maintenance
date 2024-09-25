@@ -97,7 +97,7 @@
   loop: "{{ apache_log_files }}"
   register: apache_log_files_correct
   changed_when: false
-  when: ansible_facts['os_family'] == 'Debian'
+  when: "ansible_facts.os_family == 'Debian'"
 
 - name: "Apache: Extract log paths from apache configs"
   ansible.builtin.set_fact:
