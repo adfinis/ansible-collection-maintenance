@@ -134,11 +134,12 @@
   vars:
     taskid: 10-037
     name: "Logrotate: Are there large files that point to a too verbose service?"
-  ansible.builtin.find:
+  adfinis.maintenance.find:
     paths: /var/log
-    recurse: true
-    patterns: "*.log"
-    file_type: file
+    xdev: true
+    type: file
+    pattern: "*.log"
+    exclude: "{{ linux_allowed_large_files + linux_additional_allowed_large_files }}"
   register: all_logs
 
 - <<: *task
@@ -146,7 +147,7 @@
     taskid: 10-037
     name: "Logrotate: Are there large files that point to a too verbose service?"
   ansible.builtin.set_fact:
-    unmanaged_logs: "{{ all_logs.files | rejectattr('path', 'in', (logrotate_output.content | b64decode)) | map(attribute='path') | list }}"
+    unmanaged_logs: "{{ all_logs.found | reject('in', (logrotate_output.content | b64decode)) | list }}"
 
 - <<: *task
   vars:

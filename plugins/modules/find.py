@@ -14,13 +14,17 @@ module: find
 
 short_description: Wrapper around the UNIX find utility
 
-# If this is part of a collection, you need to use semantic versioning,
-# i.e. the version is of the form "2.5.0" and not "2.4".
+# version_added describes the collection version in which this module was added, don't adjust this value
 version_added: "0.1.0"
 
 description: Wrapper around the UNIX find utility, because ansible.builtin.file capabilities are very restricted.
 
 options:
+    pattern:
+        description: Pattern that the files must match (through find -name ...)
+        required: false
+        default: null
+        type: string
     paths:
         description: Paths to search in
         required: true
@@ -68,9 +72,10 @@ author:
 
 EXAMPLES = r'''
 - name: "Find large, recently modified files"
-  adfinis.legacy.find:
+  adfinis.maintenance.find:
     paths:
       - /
+    pattern: "*.log"
     prune: [/boot, /proc, /sys]
     type: file
     size: "+16M"
@@ -97,6 +102,7 @@ import subprocess
 def run_module():
     # define available arguments/parameters a user can pass to the module
     module_args = dict(
+        pattern=dict(type='str', required=False),
         paths=dict(type='list', required=True),
         prune=dict(type='list', required=False, default=[]),
         type=dict(type='str', required=False, default=None),
@@ -138,6 +144,10 @@ def run_module():
                 break
         if not prune:
             cmdline.append(path)
+
+    if module.params['pattern'] is not None:
+        cmdline.append('-name')
+        cmdline.append(module.params['pattern'])
 
     for path in module.params['prune']:
         cmdline.append('-path')
