@@ -14,15 +14,14 @@ module: find
 
 short_description: Wrapper around the UNIX find utility
 
-# If this is part of a collection, you need to use semantic versioning,
-# i.e. the version is of the form "2.5.0" and not "2.4".
-version_added: "0.1.1"
+# version_added describes the collection version in which this module was added, don't adjust this value
+version_added: "0.1.0"
 
 description: Wrapper around the UNIX find utility, because ansible.builtin.file capabilities are very restricted.
 
 options:
     pattern:
-        description: Regex that the files must match
+        description: Pattern that the files must match (through find -name ...)
         required: false
         default: null
         type: string
