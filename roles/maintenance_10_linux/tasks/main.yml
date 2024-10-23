@@ -266,6 +266,7 @@
   vars:
     taskid: 10-067
     name: "Netboxinventory: Output pkg list to json"
+    ansible_become: false
   delegate_to: localhost
   become: false
   diff: false
