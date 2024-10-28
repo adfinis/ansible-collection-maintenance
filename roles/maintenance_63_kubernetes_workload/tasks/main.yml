@@ -135,23 +135,19 @@
   vars:
     taskid: 63-015
     name: "Config: For HA deployments, check if replicas >= 2 for all relevant Deployments/StateFulSets | Report Deployments"
-    low_replica_deployments: "{{ k8s_deployments | json_query('resources[?spec.replicas < `2`].metadata.name') }}"
+    low_replica_deployments: "{{ k8s_deployments.resources | adfinis.maintenance.k8s_workload_check_low_replicas(k8s_workload_ha_deployments, 2) }}"
   ansible.builtin.debug:
-    msg: item
-  changed_when: true
-  loop: "{{ k8s_workload_ha_deployments }}"
-  when: "item in k8s_workload_ha_deployments"
+    msg: low_replica_statefullsets
+  changed_when: low_replica_deployments | length > 0
 
 - <<: *task
   vars:
     taskid: 63-015
     name: "Config: For HA deployments, check if replicas >= 2 for all relevant Deployments/StateFulSets | Report Deployments"
-    low_replica_statefullsets: "{{ k8s_statefullsets | json_query('resources[?spec.replicas < `2`].metadata.name') }}"
+    low_replica_statefullsets: "{{ k8s_statefullsets.resources | adfinis.maintenance.k8s_workload_check_low_replicas(k8s_workload_ha_statefulsets, 2) }}"
   ansible.builtin.debug:
-    var: item
-  changed_when: true
-  loop: "{{ k8s_workload_ha_statefulsets }}"
-  when: "item in k8s_workload_ha_statefulsets"
+    var: low_replica_statefullsets
+  changed_when: low_replica_statefullsets | length > 0
 
 - <<: *task
   vars:

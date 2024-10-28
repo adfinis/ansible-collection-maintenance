@@ -8,7 +8,8 @@ class FilterModule(object):
         return {
             "k8s_workload_pods_unhealthy": self._k8s_workload_pods_unhealthy,
             "k8s_workload_pods_restart_last_days": self._k8s_workload_pods_restart_last_days,
-            "k8s_workload_check_service_type": self._k8s_workload_check_service_type
+            "k8s_workload_check_service_type": self._k8s_workload_check_service_type,
+            "k8s_workload_check_low_replicas": self._k8s_workload_check_low_replicas
         }
 
     def _k8s_workload_pods_unhealthy(self, pods):
@@ -60,3 +61,14 @@ class FilterModule(object):
                     "allowed_type": allowed_type
                 })
         return faulty_service
+
+    def _k8s_workload_check_low_replicas(self, resources, ha_resources, min_replicas):
+        if not resources:
+            return []
+        low_replicas = []
+        for resource in resources:
+            if resource.get('metadata').get('name') not in ha_resources:
+                continue
+            if resource.get('spec').get('replicas') < min_replicas:
+                low_replicas.append(resource.get('metadata').get('name'))
+        return low_replicas
