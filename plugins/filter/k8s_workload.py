@@ -16,6 +16,13 @@ class FilterModule(object):
         restarted_pods = []
         for pod in pods:
             for status in pod.get('containerStatuses', []):
+                if not status.get('startedAt') and status.get('restartCount', 0) > 0:
+                    restarted_pods.append({
+                        "name": pod.get('name'),
+                        "started_at": "unknown",
+                        "restarts": status.get('restartCount')
+                    })
+                    continue
                 started_at = datetime.fromisoformat(status.get('startedAt'))
                 if (datetime.now(started_at.tzinfo) - started_at).days < x_days:
                     restarted_pods.append({
