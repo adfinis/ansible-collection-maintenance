@@ -6,9 +6,24 @@ class FilterModule(object):
     def filters(self):
         """Return the custom filters"""
         return {
+            "k8s_workload_pods_unhealthy": self._k8s_workload_pods_unhealthy,
             "k8s_workload_pods_restart_last_days": self._k8s_workload_pods_restart_last_days,
             "k8s_workload_check_service_type": self._k8s_workload_check_service_type
         }
+
+    def _k8s_workload_pods_unhealthy(self, pods):
+        if not pods:
+            return []
+        unhealthy_pods = []
+        for pod in pods:
+            for status in pod.get('status').get('containerStatuses', []):
+                if status.get('state') and status.get('state').get('running'):
+                    continue
+                if status.get('state') and status.get('state').get('terminated'):
+                    if status['state']['terminated'].get('reason') == 'Completed':
+                        continue
+                unhealthy_pods.append(pod.get('metadata').get('name'))
+        return unhealthy_pods
 
     def _k8s_workload_pods_restart_last_days(self, pods, x_days):
         if not pods:

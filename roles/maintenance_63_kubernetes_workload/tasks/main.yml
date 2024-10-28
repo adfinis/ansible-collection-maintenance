@@ -26,11 +26,11 @@
   vars:
     taskid: 63-004
     name: "Health: Check that all service related Pods in a healthy (Running, Completed) state | Report unhealthy Pods"
-    unhealthy_pods: "{{ k8s_pods | json_query(\"resources[?status.phase!='Running' && status.phase!='Succeeded']\") }}"
+    unhealthy_pods: "{{ k8s_pods.resources | adfinis.maintenance.k8s_workload_pods_unhealthy }}"
   ansible.builtin.debug:
     msg: |
       Unhealthy Pods:
-      {{ unhealthy_pods | json_query("[].metadata.name") | to_nice_json }}
+      {{ unhealthy_pods | to_nice_json }}
   changed_when: unhealthy_pods | length > 0
 
 - <<: *task
