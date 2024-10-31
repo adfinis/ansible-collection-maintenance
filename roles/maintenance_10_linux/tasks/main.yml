@@ -128,7 +128,7 @@
     taskid: 10-037
     name: "Logrotate: Are there large files that point to a too verbose service?"
   ansible.builtin.set_fact:
-    logrotate_logs: "{{ logrotate_output.content | b64decode | split('\n') }}"
+    logrotate_logs: "{{ logrotate_output.content | b64decode | split('\n') | map('split',' ') | map('first') |map('trim', '\"') | list }}"
 
 - <<: *task
   vars:
@@ -141,20 +141,21 @@
     pattern: "*.log"
     exclude: "{{ linux_allowed_large_files + linux_additional_allowed_large_files }}"
   register: all_logs
+  changed_when: False
 
 - <<: *task
   vars:
     taskid: 10-037
     name: "Logrotate: Are there large files that point to a too verbose service?"
   ansible.builtin.set_fact:
-    unmanaged_logs: "{{ all_logs.found | reject('in', (logrotate_output.content | b64decode)) | list }}"
+    unmanaged_logs: "{{ all_logs.found | reject('in', logrotate_logs) | list }}"
 
 - <<: *task
   vars:
     taskid: 10-037
     name: "Logrotate: Are there large files that point to a too verbose service?"
   ansible.builtin.debug:
-    msg: "List of unrotated logs: {{ unmanaged_logs }}"
+    msg: "List of logs not managed by logrotate: \n{% for item in unmanaged_logs %}{{ item + '\n'}}{% endfor %}"
   when:
     - "vars.taskid not in maintenance_exclude_tasks"
     - "maintenance_only is not defined or maintenance_only == vars.taskid"
