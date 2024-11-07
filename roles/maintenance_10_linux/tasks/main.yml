@@ -48,10 +48,10 @@
 - <<: *task
   vars:
     taskid: 10-032
-    name: "Disk: Fstab: fstab correct? | Run mount -av --fake"
+    name: "Disk: Fstab: fstab correct? | Run findmnt --verify --verbose"
   environment:
     LC_ALL: C
-  ansible.builtin.shell: "mount -av --fake | grep -Ev ': (ignored)|(already mounted)'"  # noqa risky-shell-pipe mount --fake is permitted to fail
+  ansible.builtin.command: "findmnt --verify --verbose"
   register: linux_mount_all
   changed_when: false
   check_mode: false
@@ -60,10 +60,10 @@
 - <<: *task
   vars:
     taskid: 10-032
-    name: "Disk: Fstab: fstab correct? | Report non-mounted file systems"
+    name: "Disk: Fstab: fstab correct? | Report findmnt results"
   ansible.builtin.debug:
     var: "linux_mount_all.stdout_lines"
-  changed_when: "linux_mount_all.stdout_lines | length > 0"
+  changed_when: "'Success, no errors or warnings detected' not in linux_mount_all.stdout_lines"
 
 - <<: *task
   vars:
