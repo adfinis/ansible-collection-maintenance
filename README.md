@@ -14,6 +14,8 @@ It does so in a way that may be a bit counterintuitive for someone used to Ansib
   * **NOTE: It is expected that tasks fail** if some critical prerequesite is not met.  Usually this is not a bug, and
     the correct way to resolve the issue is to either fulfil the required prerequisite, or to exclude the failing task
     (see `maintenance_exclude_tasks` below).
+* The plugins in this collection are designed for Python 3.  If you have a system where the default python interpreter
+  is still Python 2, you need to add `ansible_python_interpreter=/usr/bin/python3` to the hosts' hostvars.
 
 The tasks to run are grouped into "checklists". By convention, each checklist is implemented in a separate role, e.g.:
 * The `maintenance_10_linux` role implements tasks common to most Linux systems
