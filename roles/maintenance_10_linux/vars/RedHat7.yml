@@ -1,3 +1,4 @@
 ---
 
+linux_logrotate_status_file: "/var/lib/logrotate/logrotate.status"
 # linux_allowed_login_since: not supported in RHEL 7
