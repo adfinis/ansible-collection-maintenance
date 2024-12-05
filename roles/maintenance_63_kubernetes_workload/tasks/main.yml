@@ -12,6 +12,18 @@
     taskid: ignoreme
     name: bar
 
+- name: Fetch namespace information
+  kubernetes.core.k8s_info:
+    kind: Namespace
+    name: "{{ k8s_workload_namespace }}"
+  register: k8s_namespace
+  changed_when: false
+
+- name: Make sure namespace exists
+  ansible.builtin.fail:
+    msg: "Namespace '{{ k8s_workload_namespace }}' does not exist"
+  when: k8s_namespace.resources | length == 0
+
 - <<: *task
   vars:
     taskid: 63-004
