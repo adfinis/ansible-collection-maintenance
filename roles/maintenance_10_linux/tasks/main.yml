@@ -70,7 +70,7 @@
   ansible.builtin.find:
     paths:
       - /var/log
-    size: 16m
+    size: "{{ linux_allowed_large_logfiles_maxsize_mb }}"
     follow: yes
   register: linux_large_logfiles
   changed_when: no
@@ -94,8 +94,8 @@
   vars:
     taskid: 10-034
     name: "Disk: logrotate: Are there files in /var/log that are not rotated? | Report large files in /var/log"
-    # 4096 blocks equals 16M (assuming 4k logical blocksize, which is to be expected nowadays)
-    large_files: "{{ linux_large_logfiles_stat.results | map(attribute='stat') | selectattr('blocks', 'gt', 4096) | map(attribute='path') | list }}"
+    # assuming 4k logical blocksize, which is to be expected nowadays
+    large_files: "{{ linux_large_logfiles_stat.results | map(attribute='stat') | selectattr('blocks', 'gt', (linux_allowed_large_logfiles_maxsize_mb * 1024 / 4 | int)) | map(attribute='path') | list }}"
   ansible.builtin.debug:
     var: "large_files"
   changed_when: "large_files | length > 0"
