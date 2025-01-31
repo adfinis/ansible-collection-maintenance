@@ -14,10 +14,13 @@ It does so in a way that may be a bit counterintuitive for someone used to Ansib
   * **NOTE: It is expected that tasks fail** if some critical prerequesite is not met.  Usually this is not a bug, and
     the correct way to resolve the issue is to either fulfil the required prerequisite, or to exclude the failing task
     (see `maintenance_exclude_tasks` below).
+* The plugins in this collection are designed for Python 3.  If you have a system where the default python interpreter
+  is still Python 2, you need to add `ansible_python_interpreter=/usr/bin/python3` to the hosts' hostvars.
 
 The tasks to run are grouped into "checklists". By convention, each checklist is implemented in a separate role, e.g.:
 * The `maintenance_10_linux` role implements tasks common to most Linux systems
 * The `maintenance_11_debian` role implements Debian-specific tasks
+* The `maintenance_14_sles` role implements Suse-specific tasks
 
 Checklists (i.e. roles) are assigned to hosts via playbooks.  The
 example playbook in `playbooks/playbook.yml` applies each role to an
@@ -31,6 +34,10 @@ maintenance_15_rhel
 [maintenance_11_debian]
 debian01.example.org
 debian02.example.org
+
+[maintenance_14_sles]
+sles01.example.org
+sles02.example.org
 
 [maintenance_15_rhel]
 rhel01.example.org
@@ -80,6 +87,8 @@ callback_whitelist=adfinis.maintenance.report
 callbacks_enabled=adfinis.maintenance.report
 duplicate_dict_key=ignore
 inject_facts_as_vars=no
+collections_path=./galaxy
+roles_path=./galaxy/roles
 ```
 
 
@@ -157,9 +166,24 @@ changed: [debian01.example.org]
 There is also a checklist summarising all tasks that were run but finished with either `ok` or `skipped`.
 
 
+## Development Setup
+
+For development on this collection, we recommend the following setup:
+
+- Set up a separate project folder with an inventory of your development target systems, hostvars and ansible.cfg as described above.
+- `cd` to that folder.
+- Run `ansible-galaxy collection install adfinis.maintenance`.  This will also install all the required dependencies.
+- `rm -rf ./galaxy/ansible_collections/adfinis/maintenance` to remove the collection downloaded from Galaxy.
+- `git clone github.com:adfinis/ansible-collection-maintenance ./galaxy/ansible_collections/adfinis/maintenance` to checkout the git repository.
+- Do your development inside `./galaxy/ansible_collections/adfinis/maintenance`.
+- For testing, run the playbook from your project folder as e.g. `ansible-playbook -i inventory --diff adfinis.maintenance.playbook`.
+  - If your Ansible version does not allow this yet, use the playbook path rather than its FQCN, i.e. `./galaxy/ansible_collections/adfinis/maintenance/playbooks/playbook.yml`.
+  - To only test a single checklist item, you can run `ansible-playbook` limited to the taskid, using the `maintenance_only` variable: ` ansible-playbook -e maintenance_only=10-011 ...`.
+
+
 ## License
 
-[GPL-3.0](https://github.com/adfinis-sygroup/ansible-role-repo_mirror/blob/master/LICENSE)
+[GPL-3.0](https://github.com/adfinis/ansible-role-repo_mirror/blob/master/LICENSE)
 
 ## Author Information
 

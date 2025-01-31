@@ -35,7 +35,7 @@
 
 - <<: *task
   vars:
-    taskid: 11-012
+    taskid: 12-012
     name: "dpkg status: Are there packages which do not have the dpkg status ii or hi? | Report matching packages"
   ansible.builtin.debug:
     var: "ubuntu_dpkg_status.stdout_lines"

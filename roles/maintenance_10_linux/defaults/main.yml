@@ -56,3 +56,8 @@ linux_allowed_large_files:
 linux_allowed_large_logfiles_maxsize_mb: 16
 
 linux_additional_allowed_large_files: []
+
+linux_excluded_logs_per_host: []
+
+linux_allow_var_log:
+  - "/var/log/*"

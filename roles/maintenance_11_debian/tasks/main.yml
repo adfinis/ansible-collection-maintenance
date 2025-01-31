@@ -12,42 +12,41 @@
     taskid: ignore-me
     name: bar
 
-- name: Load release-specific variables
-  ansible.builtin.include_vars: "{{ item }}"
-  with_first_found:
-    - "debian_{{ ansible_facts.distribution_major_version }}.yml"
-
+- name: Gather apt_sources facts
+  adfinis.facts.apt_sources_facts: {}
 
 - <<: *task
   vars:
     taskid: 11-011
     name: "Security: Are the security updates in the sources.list?"
   check_mode: yes
-  ansible.builtin.apt_repository:
-    repo: "{{ debian_sources_list_security | default(debian_sources_list_security_default) }}"
-
-- <<: *task
-  vars:
-    taskid: 11-012
-    name: "Repository: Check if repository is set to release name (e.g. 'bullseye') and not to 'stable' | Find all sources.list files"
-  ansible.builtin.find:
-    paths:
-      - /etc/apt/sources.list.d
-    patterns: ['*.list']
-  register: debian_sources_list_files
+  ansible.builtin.assert:
+    that: >-
+      ansible_facts.apt_sources
+      | selectattr('uri', 'eq', debian_sources_list_security_uri)
+      | selectattr('suites', 'contains', debian_sources_list_security_suite)
+      | selectattr('types', 'contains', 'deb')
+      | selectattr('components', 'contains', 'main')
+      | length > 0
+    fail_msg: >-
+      debian-security repository missing: deb {{ debian_sources_list_security_uri }} {{ debian_sources_list_security_suite }} main
+  changed_when: task.failed
+  failed_when: no
 
 - <<: *task
   vars:
     taskid: 11-012
     name: "Repository: Check if repository is set to release name (e.g. 'bullseye') and not to 'stable' | Check all sources.list files"
+    source_entry: "{{ item.1.filename }}: {{ item.1.uri }} {{ item.1.suites }} -> {{ ansible_facts.distribution_release }}"
   check_mode: yes
-  ansible.builtin.replace:
-    path: "{{ item.1 }}"
-    regexp: "(://[^\\s]+\\s+){{ item.0 }}\\b"
-    replace: "\\1{{ ansible_facts.distribution_release }}"
+  ansible.builtin.debug:
+    msg: "{{ source_entry }}"
+  changed_when:
+    - "item.0 in item.1.suites"
+    - "item.1.uri not in debian_release_name_ignore_uris"
   with_nested:
     - [stable, oldstable, oldoldstable]
-    - "{{ ['/etc/apt/sources.list'] + (debian_sources_list_files.files | map(attribute='path') | list) }}"
+    - "{{ ansible_facts.apt_sources }}"
 
 - <<: *task
   vars:
@@ -64,16 +63,24 @@
   vars:
     taskid: 11-013
     name: "For old distributions, has the repository been moved to http://archive.debian.org/ already? | grep sources.list"
-  ansible.builtin.lineinfile:
-    path: /etc/apt/sources.list
-    line: "deb http://archive.debian.org/debian/ {{ ansible_facts.distribution_release }} main contrib non-free"
-    regexp: "^\\s+deb[^-].*\\s+http://archive.debian.org/debian/?\\s+{{ ansible_facts.distribution_release }}\\s+.*$"
+  ansible.builtin.assert:
+    that: >-
+      ansible_facts.apt_sources
+      | selectattr('types', 'contains', 'deb')
+      | selectattr('uri', 'eq', 'http://archive.debian.org/debian/')
+      | selectattr('suites', 'contains', ansible_facts.distribution_release)
+      | selectattr('components', 'contains', 'main')
+      | length > 0
+    msg: >-
+      Distribution has moved to archive.debian.org.  Apt sources need to be updated:
+      deb http://archive.debian.org/debian/ {{ ansible_facts.distribution_release }} main
   # Even though this task runs all the time, the second changed_when rule causes it to only report a diff if running
   # on a distribution actually present on archive.debian.org.  Since the task is running in check mode, it doesn't do any
   # damage on non-archived distros, but won't report as changed.
   check_mode: yes
+  failed_when: no
   changed_when:
-    - "task.changed"
+    - "task.failed"
     - "debian_archive_repo_url.status == 200"
 
 - <<: *task
@@ -83,6 +90,26 @@
   ansible.builtin.apt:
     update_cache: yes
   changed_when: no
+
+- <<: *task
+  vars:
+    taskid: 11-015
+    name: "GPG-Keys: Are there errors because of not existing GPG Keys?"
+  ansible.builtin.shell: apt-get update 2>&1 | grep -e 'Key is stored in legacy trusted.gpg keyring' -e 'GPG error:'  # noqa risky-shell-pipe
+  environment:
+    LC_ALL: C
+  register: debian_apt_update_status
+  changed_when: no
+  check_mode: no
+  failed_when: "debian_apt_update_status.rc not in [0, 1]"
+
+- <<: *task
+  vars:
+    taskid: 11-015
+    name: "GPG-Keys: Are there errors because of not existing GPG Keys? | Report errors"
+  ansible.builtin.debug:
+    var: "debian_apt_update_status.stdout_lines"
+  changed_when: "debian_apt_update_status.stdout_lines | length > 0"
 
 - <<: *task
   vars:
