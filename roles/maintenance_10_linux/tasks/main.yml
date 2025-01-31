@@ -72,7 +72,7 @@
   ansible.builtin.find:
     paths:
       - /var/log
-    size: "{{ linux_allowed_large_logfiles_maxsize_mb }}"
+    size: "{{ linux_allowed_large_logfiles_maxsize_mb }}m"
     follow: true
   register: linux_large_logfiles
   changed_when: false
