@@ -38,6 +38,7 @@ linux_additional_large_logfiles_prune: []
 
 # ... and use allowed_large_files to exclude single files or small directories from the result
 
+
 # Matches start of path!
 linux_allowed_large_files:
   - "/var/cache/apt/.*pkgcache.bin$"
@@ -49,6 +50,10 @@ linux_allowed_large_files:
   - "/var/lib/rpm/Packages$"
   - "/var/cache/yum/"
   - "/var/log/lastlog"
+
+
+# needs to be a numeric value, as it's used for various calculations in tasks/main.yml
+linux_allowed_large_logfiles_maxsize_mb: 16
 
 linux_additional_allowed_large_files: []
 
