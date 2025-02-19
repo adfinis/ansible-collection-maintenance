@@ -94,11 +94,11 @@
       one_month_later: "+1m"
   register: nginx_cert_info
   loop: >-
-     {%- set cert_content = [] -%}
-     {%- for result in nginx_cert_files_content.results -%}
-     {%- set cert_content = cert_content + ([(result.content | b64decode | community.crypto.split_pem)] | flatten) -%}
-     {%- endfor -%}
-     {{- cert_content -}}
+    {%- set cert_content = [] -%}
+    {%- for result in nginx_cert_files_content.results -%}
+    {%- set cert_content = cert_content + ([result.content | b64decode | community.crypto.split_pem] | flatten) -%}
+    {%- endfor -%}
+    {{- cert_content -}}
   changed_when: false
   ignore_errors: true
   delegate_to: localhost

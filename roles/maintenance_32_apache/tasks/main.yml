@@ -193,7 +193,7 @@
   loop: >-
     {%- set cert_content = [] -%}
     {%- for result in apache_cert_files_content.results -%}
-    {%- set cert_content = cert_content + ([(result.content | b64decode | community.crypto.split_pem)] | flatten) -%}
+    {%- set cert_content = cert_content + ([result.content | b64decode | community.crypto.split_pem] | flatten) -%}
     {%- endfor -%}
     {{- cert_content -}}
   changed_when: false
