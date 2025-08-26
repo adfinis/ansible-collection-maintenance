@@ -172,7 +172,7 @@ def run_module():
         forbidden_ips.extend(module.params['forbidden_ips'])
 
     for line in out.decode('utf-8').splitlines():
-        if line.startswith('reboot') or line[1:].startswith('tmp begins') or len(line) == 0:
+        if line.startswith('reboot') or line[1:].startswith('tmp begins') or line[1:].find('web console') or len(line) == 0:
             continue
         tokens = line.split(None, 3)
         if len(tokens) < 4:
