@@ -1,0 +1,22 @@
+---
+
+maintenance_global_exclude_tasks: []
+maintenance_host_exclude_tasks: []
+maintenance_exclude_tasks: "{{ maintenance_global_exclude_tasks + maintenance_host_exclude_tasks }}"
+
+# Define defaults which can be overriden on a host-by-host basis
+
+# the namespace in which the workload is running
+k8s_workload_namespace: "{{ inventory_hostname }}"
+
+# the service types which are allowed (if not ClusterIP)
+k8s_workload_allowed_service_types: {}
+#  netbox: LoadBalancer
+
+# the deployments which should be highly available
+k8s_workload_ha_deployments: []
+#  - netbox
+
+# the statefulsets which should be highly available
+k8s_workload_ha_statefulsets: []
+#  - netbox-redis-replicas
