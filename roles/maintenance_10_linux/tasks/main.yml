@@ -47,7 +47,7 @@
 
 - <<: *task
   vars:
-    taskid: 10-032
+    taskid: 10-017
     name: "Disk: Fstab: fstab correct? | Run findmnt --verify --verbose"
   environment:
     LC_ALL: C
@@ -59,7 +59,7 @@
 
 - <<: *task
   vars:
-    taskid: 10-032
+    taskid: 10-017
     name: "Disk: Fstab: fstab correct? | Report findmnt results"
   ansible.builtin.debug:
     var: "linux_mount_all.stdout_lines"
@@ -68,7 +68,54 @@
 - <<: *task
   vars:
     taskid: 10-034
-    name: "Disk: logrotate: Are there files in /var/log that are not rotated? | Find large files in /var/log"
+    name: "logrotate: Are all files in /var/log managed by logrotate? | Read status file"
+  ansible.builtin.slurp:
+    src: "{{ linux_logrotate_status_file }}"
+  register: logrotate_output
+
+- <<: *task
+  vars:
+    taskid: 10-034
+    name: "Logrotate: Are all files in /var/log managed by logrotate? | Extract file list from status file"
+  ansible.builtin.set_fact:
+    logrotate_logs: "{{ logrotate_output.content | b64decode | split('\n') | map('split',' ') | map('first') |map('trim', '\"') | list }}"
+
+- <<: *task
+  vars:
+    taskid: 10-034
+    name: "Logrotate: Are there files in /var/log that are not rotated? | List all files in /var/log."
+  adfinis.maintenance.find:
+    paths: /var/log
+    xdev: true
+    type: file
+    pattern: "*.log"
+    exclude: "{{ linux_allowed_large_files + linux_additional_allowed_large_files }}"
+  register: all_logs
+  changed_when: false
+
+- <<: *task
+  vars:
+    taskid: 10-034
+    name: "Logrotate: Are there files in /var/log that are not rotated? | Compare file lists"
+  ansible.builtin.set_fact:
+    unmanaged_logs: "{{ all_logs.found | reject('in', logrotate_logs) | list }}"
+
+- <<: *task
+  vars:
+    taskid: 10-034
+    name: "Logrotate: list all files in /var/log that are not rotated."
+  ansible.builtin.debug:
+    msg: "List of logs not managed by logrotate: \n{% for item in unmanaged_logs %}{{ item + '\n'}}{% endfor %}"
+  when:
+    - "vars.taskid not in maintenance_exclude_tasks"
+    - "maintenance_only is not defined or maintenance_only == vars.taskid"
+    - "unmanaged_logs | length > 0"
+  changed_when: "unmanaged_logs | length > 0"
+
+- <<: *task
+  vars:
+    taskid: 10-037
+    name: "Logfiles: Are there large files that point to a too verbose service? | Find large files in /var/log"
   ansible.builtin.find:
     paths:
       - /var/log
@@ -81,8 +128,8 @@
   # Use stat to figure out the actual on-disk size
 - <<: *task
   vars:
-    taskid: 10-034
-    name: "Disk: logrotate: Are there files in /var/log that are not rotated? | Stat found files in /var/log"
+    taskid: 10-037
+    name: "Logfiles: Are there large files that point to a too verbose service? | Stat found files in /var/log"
   ansible.builtin.stat:
     path: "{{ item }}"
     get_attributes: false
@@ -94,8 +141,8 @@
 
 - <<: *task
   vars:
-    taskid: 10-034
-    name: "Disk: logrotate: Are there files in /var/log that are not rotated? | Report large files in /var/log"
+    taskid: 10-037
+    name: "Logfiles: Are there large files that point to a too verbose service? | Report large files in /var/log"
     # assuming 4k logical blocksize, which is to be expected nowadays
     large_files: "{{ linux_large_logfiles_stat.results | map(attribute='stat') | selectattr('blocks', 'gt', (linux_allowed_large_logfiles_maxsize_mb * 1024 / 4 | int)) | map(attribute='path') | list }}"
   ansible.builtin.debug:
@@ -104,8 +151,8 @@
 
 - <<: *task
   vars:
-    taskid: 10-035
-    name: "Are there logfiles outside /var/log that are not rotated? | Find large files outside /var/log"
+    taskid: 10-037
+    name: "Logfiles: Are there large, possible logfiles outside /var/log that point to a too verbose service? | Find large, recently changed files outside /var/log"
   adfinis.maintenance.find:
     paths: "{{ ansible_facts.mounts | map(attribute='mount') | list }}"
     prune: "{{ linux_large_logfiles_prune + linux_additional_large_logfiles_prune }}"
@@ -114,53 +161,6 @@
     size: "+16M"
     age: "-{{ 60 * 24 * 7 * 2 }}"  # two weeks
     exclude: "{{ linux_allowed_large_files + linux_additional_allowed_large_files + linux_allow_var_log }}"
-
-- <<: *task
-  vars:
-    taskid: 10-037
-    name: "Logrotate: Are there large files that point to a too verbose service?"
-  ansible.builtin.slurp:
-    src: "{{ linux_logrotate_status_file }}"
-  register: logrotate_output
-
-- <<: *task
-  vars:
-    taskid: 10-037
-    name: "Logrotate: Are there large files that point to a too verbose service?"
-  ansible.builtin.set_fact:
-    logrotate_logs: "{{ logrotate_output.content | b64decode | split('\n') | map('split',' ') | map('first') |map('trim', '\"') | list }}"
-
-- <<: *task
-  vars:
-    taskid: 10-037
-    name: "Logrotate: Are there large files that point to a too verbose service?"
-  adfinis.maintenance.find:
-    paths: /var/log
-    xdev: true
-    type: file
-    pattern: "*.log"
-    exclude: "{{ linux_allowed_large_files + linux_additional_allowed_large_files }}"
-  register: all_logs
-  changed_when: false
-
-- <<: *task
-  vars:
-    taskid: 10-037
-    name: "Logrotate: Are there large files that point to a too verbose service?"
-  ansible.builtin.set_fact:
-    unmanaged_logs: "{{ all_logs.found | reject('in', logrotate_logs) | list }}"
-
-- <<: *task
-  vars:
-    taskid: 10-037
-    name: "Logrotate: Are there large files that point to a too verbose service?"
-  ansible.builtin.debug:
-    msg: "List of logs not managed by logrotate: \n{% for item in unmanaged_logs %}{{ item + '\n'}}{% endfor %}"
-  when:
-    - "vars.taskid not in maintenance_exclude_tasks"
-    - "maintenance_only is not defined or maintenance_only == vars.taskid"
-    - "unmanaged_logs | length > 0"
-  changed_when: "unmanaged_logs | length > 0"
 
 - <<: *task
   vars:
