@@ -169,7 +169,6 @@
   vars:
     taskid: 10-037
     name: "Logfiles: Are there large log files that point to a too verbose service? | Report all large possible log files"
-    # assuming 4k logical blocksize, which is to be expected nowadays
     large_files: "{{ linux_list_large_logfiles.large_files + linux_large_files_outside.found | list }}"
   ansible.builtin.debug:
     var: "large_files"
