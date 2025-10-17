@@ -28,9 +28,9 @@ linux_allowed_login_ips: []
 
 linux_additional_allowed_login_ips: []
 
-# Exclude logfiles that are managed via some other mechanism than logrotate 
+# Exclude logfiles that are managed via some other mechanism than logrotate
 
-linux_allowed_unmanaged_logs: 
+linux_allowed_unmanaged_logs:
   - "/var/log/fontconfig.log"
 
 linux_additional_allowed_unmanaged_logs: []
