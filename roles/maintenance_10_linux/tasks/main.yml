@@ -142,17 +142,18 @@
 - <<: *task
   vars:
     taskid: 10-037
-    name: "Logfiles: Are there large files that point to a too verbose service? | Report large files in /var/log"
+    name: "Logfiles: Are there large log files that point to a too verbose service? | Report large files in /var/log"
     # assuming 4k logical blocksize, which is to be expected nowadays
     large_files: "{{ linux_large_logfiles_stat.results | map(attribute='stat') | selectattr('blocks', 'gt', (linux_allowed_large_logfiles_maxsize_mb * 1024 / 4 | int)) | map(attribute='path') | list }}"
   ansible.builtin.debug:
     var: "large_files"
-  changed_when: "large_files | length > 0"
+  register: linux_list_large_logfiles
+  changed_when: false
 
 - <<: *task
   vars:
     taskid: 10-037
-    name: "Logfiles: Are there large, possible logfiles outside /var/log that point to a too verbose service? | Find large, recently changed files outside /var/log"
+    name: "Logfiles: Are there large log files that point to a too verbose service? | Find large, recently changed files outside /var/log"
   adfinis.maintenance.find:
     paths: "{{ ansible_facts.mounts | map(attribute='mount') | list }}"
     prune: "{{ linux_large_logfiles_prune + linux_additional_large_logfiles_prune }}"
@@ -161,6 +162,19 @@
     size: "+16M"
     age: "-{{ 60 * 24 * 7 * 2 }}"  # two weeks
     exclude: "{{ linux_allowed_large_files + linux_additional_allowed_large_files + linux_allow_var_log }}"
+  register: linux_large_files_outside
+  changed_when: false
+
+- <<: *task
+  vars:
+    taskid: 10-037
+    name: "Logfiles: Are there large log files that point to a too verbose service? | Report all large possible log files"
+    # assuming 4k logical blocksize, which is to be expected nowadays
+    large_files: "{{ linux_list_large_logfiles.large_files + linux_large_files_outside.found | list }}"
+  ansible.builtin.debug:
+    var: "large_files"
+  register: linux_list_large_logfiles
+  changed_when: "large_files | length > 0"
 
 - <<: *task
   vars:
