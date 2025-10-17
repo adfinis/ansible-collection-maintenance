@@ -89,7 +89,7 @@
     xdev: true
     type: file
     pattern: "*.log"
-    exclude: "{{ linux_allowed_large_files + linux_additional_allowed_large_files }}"
+    exclude: "{{ linux_allowed_unmanaged_logs + linux_additional_allowed_unmanaged_logs }}"
   register: all_logs
   changed_when: false
 

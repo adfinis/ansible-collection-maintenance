@@ -28,8 +28,14 @@ linux_allowed_login_ips: []
 
 linux_additional_allowed_login_ips: []
 
+# Exclude logfiles that are managed via some other mechanism than logrotate 
 
-# Use large_logfiles_prune to exclude large directory trees (e.g. userhomes, backup volumes, ...) from the search
+linux_allowed_unmanaged_logs: 
+  - "/var/log/fontconfig.log"
+
+linux_additional_allowed_unmanaged_logs: []
+
+# Use large_logfiles_prune to exclude large directory trees (e.g. userhomes, backup volumes, ...) from the search of 10-037
 
 linux_large_logfiles_prune:
   - /mnt
@@ -37,11 +43,10 @@ linux_large_logfiles_prune:
 linux_additional_large_logfiles_prune: []
 
 # ... and use allowed_large_files to exclude single files or small directories from the result
-
-
 # Matches start of path!
 linux_allowed_large_files:
   - "/var/cache/apt/.*pkgcache.bin$"
+  - "/var/cache/apt/archives/"
   - "/boot/vmlinuz"
   - "/boot/initrd"
   - "/boot/initramfs"
@@ -51,11 +56,10 @@ linux_allowed_large_files:
   - "/var/cache/yum/"
   - "/var/log/lastlog"
 
+linux_additional_allowed_large_files: []
 
 # needs to be a numeric value, as it's used for various calculations in tasks/main.yml
 linux_allowed_large_logfiles_maxsize_mb: 16
-
-linux_additional_allowed_large_files: []
 
 linux_excluded_logs_per_host: []
 
