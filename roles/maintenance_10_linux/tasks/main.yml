@@ -174,7 +174,7 @@
   vars:
     taskid: 10-039
     name: "Logfiles: Does journald log to persistent storage? | Check for journal of previous boot"
-  ansible.builtin.command: journalctl -b -1 -n +1  
+  ansible.builtin.command: journalctl -b -1 -n +1
   register: linux_system_journal_prev_boot
   changed_when: false
   failed_when: false
