@@ -85,14 +85,6 @@
 
 - <<: *task
   vars:
-    taskid: 11-014
-    name: "Update package lists and check for errors"
-  ansible.builtin.apt:
-    update_cache: yes
-  changed_when: no
-
-- <<: *task
-  vars:
     taskid: 11-015
     name: "GPG-Keys: Are there errors because of not existing GPG Keys?"
   ansible.builtin.shell: apt-get update 2>&1 | grep -e 'Key is stored in legacy trusted.gpg keyring' -e 'GPG error:'  # noqa risky-shell-pipe
@@ -113,7 +105,24 @@
 
 - <<: *task
   vars:
-    taskid: 11-016
+    taskid: 11-021
+    name: "apt: Update cache and simulate the package upgrade"
+  ansible.builtin.apt:
+    update_cache: yes
+    upgrade: safe
+  check_mode: yes
+
+- <<: *task
+  vars:
+    taskid: 11-023
+    name: "apt: Remove obsolete packages"
+  ansible.builtin.apt:
+    autoremove: yes
+  check_mode: yes
+
+- <<: *task
+  vars:
+    taskid: 11-024
     name: "dpkg status: Are there packages which do not have the dpkg status ii or hi? | Get list of matching packages"
   ansible.builtin.shell: dpkg -l | tail -n +6 | grep -vE '^[hi]i'  # noqa risky-shell-pipe  never fails
   register: debian_dpkg_status
@@ -123,7 +132,7 @@
 
 - <<: *task
   vars:
-    taskid: 11-016
+    taskid: 11-024
     name: "dpkg status: Are there packages which do not have the dpkg status ii or hi? | Report matching packages"
   ansible.builtin.debug:
     var: "debian_dpkg_status.stdout_lines"
@@ -131,52 +140,14 @@
 
 - <<: *task
   vars:
-    taskid: 11-017
-    name: "apt: Simulate the package upgrade"
-  ansible.builtin.apt:
-    update_cache: yes
-    upgrade: safe
-  check_mode: yes
-
-- <<: *task
-  vars:
-    taskid: 11-019
-    name: "apt: Remove obsolete packages"
-  ansible.builtin.apt:
-    autoremove: yes
-  check_mode: yes
-
-- <<: *task
-  vars:
-    taskid: 11-020
+    taskid: 11-025
     name: "boot-config: Check boot configuration: update initramfs"
   ansible.builtin.command: update-initramfs -u
   changed_when: no  # only requires human interaction in case of errors
 
 - <<: *task
   vars:
-    taskid: 11-020
+    taskid: 11-025
     name: "boot-config: Check boot configuration: keep bootloader up to date"
   ansible.builtin.command: update-grub
   changed_when: no  # only requires human interaction in case of errors
-
-- <<: *task
-  vars:
-    taskid: 10-061
-    name: "Updates: Check if a major update is pending. | Update Debian distribution info"
-  ansible.builtin.apt:
-    name:
-      - distro-info
-      - distro-info-data
-    state: latest  # noqa package-latest  we need the latest distro-info-data
-    update_cache: yes
-  changed_when: no  # Don't care if this task actually changed, it's only preparation for the following task
-
-- <<: *task
-  vars:
-    taskid: 10-061
-    name: "Updates: Check if a major update is pending. | Check release name against stable"
-  ansible.builtin.command: distro-info --stable
-  changed_when:
-    - "ansible_facts.distribution_release != 'testing'"
-    - "ansible_facts.distribution_release not in task.stdout_lines"
