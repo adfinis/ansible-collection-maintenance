@@ -32,6 +32,26 @@
 
 - <<: *task
   vars:
+    taskid: 10-017
+    name: "Fstab: fstab correct? | Run findmnt --verify --verbose"
+  environment:
+    LC_ALL: C
+  ansible.builtin.command: "findmnt --verify --verbose"
+  register: linux_mount_all
+  changed_when: false
+  check_mode: false
+  failed_when: "linux_mount_all.rc not in [0, 1]"
+
+- <<: *task
+  vars:
+    taskid: 10-017
+    name: "Fstab: fstab correct? | Report findmnt results"
+  ansible.builtin.debug:
+    var: "linux_mount_all.stdout_lines"
+  changed_when: "'Success, no errors or warnings detected' not in linux_mount_all.stdout_lines"
+
+- <<: *task
+  vars:
     taskid: 10-028
     name: "Systemd: Check all important service units | Gather systemd unit facts"
   ansible.builtin.service_facts: {}
@@ -44,26 +64,6 @@
   ansible.builtin.debug:
     var: failed_units
   changed_when: "failed_units | length > 0"
-
-- <<: *task
-  vars:
-    taskid: 10-017
-    name: "Disk: Fstab: fstab correct? | Run findmnt --verify --verbose"
-  environment:
-    LC_ALL: C
-  ansible.builtin.command: "findmnt --verify --verbose"
-  register: linux_mount_all
-  changed_when: false
-  check_mode: false
-  failed_when: "linux_mount_all.rc not in [0, 1]"
-
-- <<: *task
-  vars:
-    taskid: 10-017
-    name: "Disk: Fstab: fstab correct? | Report findmnt results"
-  ansible.builtin.debug:
-    var: "linux_mount_all.stdout_lines"
-  changed_when: "'Success, no errors or warnings detected' not in linux_mount_all.stdout_lines"
 
 - <<: *task
   vars:
@@ -106,10 +106,6 @@
     name: "Logrotate: list all files in /var/log that are not rotated."
   ansible.builtin.debug:
     msg: "List of logs not managed by logrotate: \n{% for item in unmanaged_logs %}{{ item + '\n'}}{% endfor %}"
-  when:
-    - "vars.taskid not in maintenance_exclude_tasks"
-    - "maintenance_only is not defined or maintenance_only == vars.taskid"
-    - "unmanaged_logs | length > 0"
   changed_when: "unmanaged_logs | length > 0"
 
 - <<: *task
@@ -172,61 +168,26 @@
     large_files: "{{ linux_list_large_logfiles.large_files + linux_large_files_outside.found | list }}"
   ansible.builtin.debug:
     var: "large_files"
-  register: linux_list_large_logfiles
   changed_when: "large_files | length > 0"
 
 - <<: *task
   vars:
     taskid: 10-039
-    name: "Logfiles: Does journald log to persistent storage? | Check age of system journal"
-  ansible.builtin.stat:
-    path: "/var/log/journal/{{ ansible_facts.machine_id }}/system.journal"
-  register: linux_stat_system_journal
-  check_mode: true
+    name: "Logfiles: Does journald log to persistent storage? | Check for journal of previous boot"
+  ansible.builtin.command: journalctl -b -1 -n +1
+  register: linux_system_journal_prev_boot
+  changed_when: false
+  failed_when: false
 
 - <<: *task
   vars:
     taskid: 10-039
-    name: "Logfiles: Does journald log to persistent storage? | Report age of system journal"
+    name: "Logfiles: Does journald log to persistent storage? | Report age of system journal on error"
   ansible.builtin.debug:
-    msg: >-
-      /var/log/journal/{{ ansible_facts.machine_id }}/system.journal
-      {% if not linux_stat_system_journal.stat.exists -%}
-      does not exist
-      {% else -%}
-      was last modified {{ '%Y-%m-%d %H:%M:%S' | strftime(linux_stat_system_journal.stat.mtime) }}
-      {% endif %}
-  changed_when: "not linux_stat_system_journal.stat.exists or (ansible_facts.date_time.epoch | int - linux_stat_system_journal.stat.mtime) > 3600 * 48"
-
-- <<: *task
-  vars:
-    taskid: 10-040
-    name: "Security: User: Are all created users documented in the wiki with password? | Gather local users with password login"
-  ansible.builtin.shell: |
-    set -o pipefail  # need the return code of grep, not of cut
-    grep '\\$' /etc/shadow | cut -d: -f1
-  args:
-    executable: /bin/bash  # -o pipefail is a bash feature
-  changed_when: false
-  register: linux_shadow_users
-  failed_when: "linux_shadow_users.rc not in [0, 1]"
-
-- <<: *task
-  vars:
-    taskid: 10-040
-    name: "Security: User: Are all created users documented in the wiki with password? | Report local users with password login"
-  ansible.builtin.debug:
-    var: "linux_shadow_users.stdout_lines | difference(linux_allowed_login_users)"
-  changed_when: "linux_shadow_users.stdout_lines | difference(linux_allowed_login_users) | length > 0"
-
-- <<: *task
-  vars:
-    taskid: 10-041
-    name: "Security: Logins: Are there logins from suspicious hosts/users? | Gather past logins from `last` output"
-  adfinis.maintenance.lastlogins:
-    allowed_users: "{{ linux_allowed_login_users + linux_additional_allowed_login_users }}"
-    allowed_ips: "{{ linux_allowed_login_ips + linux_additional_allowed_login_ips }}"
-    since: "{{ linux_allowed_login_since | default(omit) }}"
+    msg: |
+      Journal from previous boot not available. Please check if persistency is configured and SystemMaxUse limit not reached.
+      {{ linux_system_journal_prev_boot.stderr }}
+  changed_when: "linux_system_journal_prev_boot.rc != 0"
 
 - <<: *task
   vars:
