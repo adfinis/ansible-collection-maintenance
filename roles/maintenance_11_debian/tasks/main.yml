@@ -124,7 +124,7 @@
   vars:
     taskid: 11-024
     name: "dpkg status: Are there packages with broken installation states? | Get list of matching packages"
-  ansible.builtin.shell: dpkg -l | grep -vE '^[A-Z]. '  # noqa risky-shell-pipe  never fails
+  ansible.builtin.shell: dpkg -l | grep -E '^[A-Z]. '  # noqa risky-shell-pipe  never fails
   register: debian_dpkg_status
   check_mode: no
   changed_when: no
