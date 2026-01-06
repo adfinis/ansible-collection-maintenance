@@ -123,8 +123,8 @@
 - <<: *task
   vars:
     taskid: 11-024
-    name: "dpkg status: Are there packages which do not have the dpkg status ii or hi? | Get list of matching packages"
-  ansible.builtin.shell: dpkg -l | tail -n +6 | grep -vE '^[hi]i'  # noqa risky-shell-pipe  never fails
+    name: "dpkg status: Are there packages with broken installation states? | Get list of matching packages"
+  ansible.builtin.shell: dpkg -l | grep -vE '^[A-Z]. '  # noqa risky-shell-pipe  never fails
   register: debian_dpkg_status
   check_mode: no
   changed_when: no
@@ -133,7 +133,7 @@
 - <<: *task
   vars:
     taskid: 11-024
-    name: "dpkg status: Are there packages which do not have the dpkg status ii or hi? | Report matching packages"
+    name: "dpkg status: Are there packages with broken installation states? | Report matching packages"
   ansible.builtin.debug:
     var: "debian_dpkg_status.stdout_lines"
   changed_when: "debian_dpkg_status.stdout_lines | length > 0"
