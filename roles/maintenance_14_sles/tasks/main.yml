@@ -15,7 +15,7 @@
 - <<: *task
   vars:
     taskid: 14-001
-    name: "Apparmor: Check if apparmor is enabled and enforcing apparmor_status"
+    name: "Apparmor: Check if apparmor is enabled and enforcing"
   ansible.builtin.command: aa-status
   changed_when: "task.rc != 0"
   failed_when: "task.rc == 4"  # Insufficient permission to check AA policies.
@@ -23,7 +23,7 @@
 - <<: *task
   vars:
     taskid: 14-002
-    name: "Check if the system is properly registered at SUSE SUSEConnect --status-text"
+    name: "Check if the system is properly registered at SUSE"
   ansible.builtin.command: SUSEConnect --status-text
   register: suseconnect_status_output
   changed_when: "'Not Registered' in suseconnect_status_output.stdout"
@@ -31,7 +31,7 @@
 - <<: *task
   vars:
     taskid: 14-003
-    name: "Zypper: Update package lists and check for errors zypper refresh"
+    name: "Zypper: Update package lists and check for errors"
   community.general.zypper:
     name: '*'
     update_cache: true
@@ -39,7 +39,7 @@
 - <<: *task
   vars:
     taskid: 14-004
-    name: "Zypper: Check for available updates and review them zypper list-updates"
+    name: "Zypper: Check for available updates and review them"
   community.general.zypper:
     name: '*'
     state: latest
@@ -48,8 +48,8 @@
 
 - <<: *task
   vars:
-    taskid: 14-005
-    name: "Zypper: Check for orphaned packages but do not uninstall them if not needed anymore zypper packages --orphaned"
+    taskid: 14-006
+    name: "Zypper: Checking for orphaned packages. Please review and uninstall them if not needed anymore"
   ansible.builtin.command: zypper packages --orphaned
   register: sles_packages_status
   check_mode: false
@@ -58,8 +58,8 @@
 
 - <<: *task
   vars:
-    taskid: 14-005
-    name: "Zypper: Check for orphaned packages but do not uninstall them if not needed anymore zypper packages --orphaned"
+    taskid: 14-006
+    name: "Zypper: Checking for orphaned packages. Please review and uninstall them if not needed anymore"
   ansible.builtin.debug:
     var: "sles_packages_status.stdout_lines"
   changed_when: "sles_packages_status.stdout_lines | length > 0"
