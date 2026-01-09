@@ -17,6 +17,23 @@
 
 - <<: *task
   vars:
+    taskid: 11-010
+    name: "Are the sources.list files setup according to our current standard? | Find legacy sources.list files on Debian 13 and newer"
+  check_mode: yes
+  ansible.builtin.assert:
+    that: >-
+      ansible_facts.apt_sources
+      | selectattr('filename', 'regex', '^.*\\.list$')
+      | length == 0
+    fail_msg: >-
+      There are legacy sources.list files not converted to the new format.  Convert with `apt modernize-sources` and resolve all issues, esp. missing PGP keys.
+  changed_when: task.failed
+  failed_when: no
+  when:
+    - "ansible_facts.distribution_major_version | int >= 13"
+
+- <<: *task
+  vars:
     taskid: 11-011
     name: "Security: Are the security updates in the sources.list?"
   check_mode: yes
