@@ -58,7 +58,7 @@
 - <<: *task
   vars:
     taskid: 31-011
-    name: "Error: Are ther any problematic messages in the error logs"
+    name: "Error: Are there any problematic messages in the error logs"
   ansible.builtin.debug:
     msg: "Please double check error logs for important error messages -> {{  nginx_log_files.stdout_lines | default([]) | join(', ') }}"
   changed_when: true
