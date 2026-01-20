@@ -29,14 +29,22 @@ linux_allowed_login_ips: []
 linux_additional_allowed_login_ips: []
 
 # Exclude logfiles that are managed via some other mechanism than logrotate
-
+# or are not managed but not concerning
 linux_allowed_unmanaged_logs:
   - "/var/log/fontconfig.log"
+  - "/var/log/audit/audit.log"
+  - "/var/log/alternatives.log"
+  - "/var/log/cloud-init.log"
+  - "/var/log/cloud-init-output.log"
+  - "/var/log/azure/"
+  - "/var/log/YaST2/config_diff_*"
+  - "/var/log/waagent.log" # waagent log is only rotated if >20MB, causing false positives
+  - "/var/log/lastlog"
+  - "/var/log/instance_billing_flavor_check" # SLES specific, not rotated
 
 linux_additional_allowed_unmanaged_logs: []
 
 # Use large_logfiles_prune to exclude large directory trees (e.g. userhomes, backup volumes, ...) from the search of 10-037
-
 linux_large_logfiles_prune:
   - /mnt
 
@@ -44,6 +52,8 @@ linux_additional_large_logfiles_prune: []
 
 # ... and use allowed_large_files to exclude single files or small directories from the result
 # Matches start of path!
+# Completely separate from linux_allowed_unmanaged_logs: Include files in /var/log here
+# again that need to be ignored by both 10-034 and 10-037.
 linux_allowed_large_files:
   - "/var/cache/apt/.*pkgcache.bin$"
   - "/var/cache/apt/archives/"
@@ -51,10 +61,16 @@ linux_allowed_large_files:
   - "/boot/initrd"
   - "/boot/initramfs"
   - "/var/lib/dirsrv/"
+  - "/var/lib/docker/.*"
   - "/var/log/journal/"
   - "/var/lib/rpm/Packages$"
   - "/var/cache/yum/"
+  - "/usr/lib/sysimage/rpm/Index.db"
+  - "/usr/lib/sysimage/rpm/Packages.db"
+  - "/var/adm/backup/rpmdb/Packages.db.*"
+  - "/var/log/waagent.log" # waagent log is only rotated if >20MB, causing false positives
   - "/var/log/lastlog"
+  - "/var/log/instance_billing_flavor_check" # SLES specific, not rotated
 
 linux_additional_allowed_large_files: []
 

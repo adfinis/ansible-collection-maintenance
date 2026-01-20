@@ -112,11 +112,12 @@
   vars:
     taskid: 10-037
     name: "Logfiles: Are there large files that point to a too verbose service? | Find large files in /var/log"
-  ansible.builtin.find:
+  adfinis.maintenance.find:
     paths:
       - /var/log
-    size: "{{ linux_allowed_large_logfiles_maxsize_mb }}m"
+    size: "+{{ linux_allowed_large_logfiles_maxsize_mb }}M"
     follow: true
+    exclude: "{{ linux_allowed_large_files + linux_additional_allowed_large_files }}"
   register: linux_large_logfiles
   changed_when: false
 
@@ -131,7 +132,7 @@
     get_attributes: false
     get_checksum: false
     get_mime: false
-  loop: "{{ linux_large_logfiles.files | map(attribute='path') | list }}"
+  loop: "{{ linux_large_logfiles.found }}"
   register: linux_large_logfiles_stat
   changed_when: false
 
