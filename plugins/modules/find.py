@@ -59,6 +59,12 @@ options:
         required: false
         default: []
         type: list
+    follow:
+        description: Change behaviour to follow symlinks
+        required: false
+        default: false
+        type: bool
+
 
 # Specify this value according to your collection
 # in format of namespace.collection.doc_fragment_name
@@ -111,6 +117,7 @@ def run_module():
         age=dict(type='str', required=False, default=None),
         exclude=dict(type='list', required=False, default=[]),
         find=dict(type='str', required=False, default='find'),
+        follow=dict(type='bool', required=False, default=False),
     )
 
     # seed the result dict in the object
@@ -132,6 +139,8 @@ def run_module():
     )
 
     cmdline = [module.params['find']]
+    if module.params['follow']:
+        cmdline.append('-L')
     for path in module.params['paths']:
         if path.startswith('-'):
             path = './' + path
