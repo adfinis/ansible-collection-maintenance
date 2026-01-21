@@ -50,7 +50,7 @@
 
 - <<: *task
   vars:
-    taskid: 15-012
+    taskid: 15-013
     name: "Is selinux switched on"
   check_mode: yes  # We only want to know about changes, not actually apply them
   ansible.posix.selinux:
@@ -59,7 +59,7 @@
 
 - <<: *task
   vars:
-    taskid: 15-013
+    taskid: 15-014
     name: "Scan the audit log for issues | gather logs"
   ansible.builtin.command: ausearch -m AVC
   register: audit_log_output
@@ -69,7 +69,7 @@
 
 - <<: *task
   vars:
-    taskid: 15-013
+    taskid: 15-014
     name: "Scan the audit log for issues | output"
   ansible.builtin.debug:
     var: "audit_log_output.stdout_lines"
