@@ -251,7 +251,7 @@ def run_module():
             with open(resolved, 'r') as f:
                 keys = f.read().splitlines()
                 sshkeys.extend(keys)
-        sshkeys = [l for l in sshkeys if not l.strip().startswith('#')]
+        sshkeys = [l for l in sshkeys if l and not l.strip().startswith('#')]
         result['authorized_keys'][pwdent.pw_name] = sshkeys
 
     violations = ''

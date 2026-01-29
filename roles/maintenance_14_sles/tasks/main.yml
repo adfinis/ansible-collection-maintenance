@@ -9,7 +9,7 @@
         - "vars.taskid not in maintenance_exclude_tasks"
         - "maintenance_only is not defined or maintenance_only == vars.taskid"
   vars:
-    taskid: ignoreme
+    taskid: ignore-me
     name: bar
 
 - <<: *task
