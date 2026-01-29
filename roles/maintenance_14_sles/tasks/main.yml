@@ -49,8 +49,8 @@
 - <<: *task
   vars:
     taskid: 14-006
-    name: "Zypper: Checking for orphaned packages. Please review and uninstall them if not needed anymore"
-  ansible.builtin.command: zypper packages --orphaned
+    name: "Zypper: Check for orphaned and unneeded packages and either fix or uninstall them if not needed anymore"
+  ansible.builtin.command: zypper packages --orphaned --unneeded
   register: sles_packages_status
   check_mode: false
   changed_when: false
@@ -59,7 +59,7 @@
 - <<: *task
   vars:
     taskid: 14-006
-    name: "Zypper: Checking for orphaned packages. Please review and uninstall them if not needed anymore"
+    name: "Zypper: Check for orphaned and unneeded packages and either fix or uninstall them if not needed anymore"
   ansible.builtin.debug:
     var: "sles_packages_status.stdout_lines"
   changed_when: "sles_packages_status.stdout_lines | length > 0"
