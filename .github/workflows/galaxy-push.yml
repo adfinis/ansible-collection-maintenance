@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Set version in galaxy.yml
         run: |
@@ -20,6 +20,6 @@ jobs:
           sed -re "s/^version:.*$/version: ${VERSION}/" -i galaxy.yml
 
       - name: Upload collection to Ansible Galaxy
-        uses: ansible/ansible-publish-action@v1.0.0
+        uses: ansible/ansible-publish-action@a56a0328c92c1d4feedf5bd7f7cf7ec7a4ae3f09 # v1.0.0
         with:
           api_key: ${{ secrets.GALAXY_API_KEY }}
