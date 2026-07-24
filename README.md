@@ -165,6 +165,31 @@ changed: [debian01.example.org]
 
 There is also a checklist summarising all tasks that were run but finished with either `ok` or `skipped`.
 
+## Kubernetes Workload Maintenance
+
+### Requirements
+
+Make sure to install the python `kubernetes` package.
+
+### Authentication
+
+Ansible will use your default kubernetes config for authentication, so make sure you have that set up.
+
+### Inventory
+
+You can add the namespace which you want to run maintenance against as a host in your inventory.  
+Make sure to set `ansible_connection: local` whenever you do kubernetes maintenance.
+
+```ini
+[maintenance_63_kubernetes_workload]
+kube-public
+kube-system
+argocd
+
+[maintenance_63_kubernetes_workload:vars]
+ansible_connection=local
+```
+
 
 ## Development Setup
 
