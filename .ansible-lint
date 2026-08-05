@@ -18,6 +18,6 @@ skip_list:
   # We're setting our version within the CI
   - galaxy[version-missing]
 
-  exclude_paths:
+exclude_paths:
   - .cache/  # implicit unless exclude_paths is defined in config
   - .github/
