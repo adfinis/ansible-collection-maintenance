@@ -1,0 +1,181 @@
+---
+
+- name: This task only serves as a template for the tasks below
+  ansible.builtin.set_fact:
+    ignoreme: &task
+      name: "{{ vars.taskid }}: {{ vars.name }}"
+      register: task
+      when:
+        - "vars.taskid not in maintenance_exclude_tasks"
+        - "maintenance_only is not defined or maintenance_only == vars.taskid"
+  vars:
+    taskid: ignoreme
+    name: bar
+
+- name: Fetch namespace information
+  kubernetes.core.k8s_info:
+    kind: Namespace
+    name: "{{ k8s_workload_namespace }}"
+  register: k8s_namespace
+  changed_when: false
+
+- name: Make sure namespace exists
+  ansible.builtin.fail:
+    msg: "Namespace '{{ k8s_workload_namespace }}' does not exist"
+  when: k8s_namespace.resources | length == 0
+
+- <<: *task
+  vars:
+    taskid: 63-004
+    name: "Health: Check that all service related Pods in a healthy (Running, Completed) state | Gather all infos"
+  kubernetes.core.k8s_info:
+    kind: Pod
+    namespace: "{{ k8s_workload_namespace }}"
+  register: k8s_pods
+  changed_when: false
+
+- <<: *task
+  vars:
+    taskid: 63-004
+    name: "Health: Check that all service related Pods in a healthy (Running, Completed) state | Report unhealthy Pods"
+    unhealthy_pods: "{{ k8s_pods.resources | adfinis.maintenance.k8s_workload_pods_unhealthy }}"
+  ansible.builtin.debug:
+    msg: |
+      Unhealthy Pods:
+      {{ unhealthy_pods | to_nice_json }}
+  changed_when: unhealthy_pods | length > 0
+
+- <<: *task
+  vars:
+    taskid: 63-006
+    name: "Health: Check if a container of service related Pod got recently restarted, eg. OOMKilled | Gather all infos"
+  kubernetes.core.k8s_info:
+    kind: Pod
+    namespace: "{{ k8s_workload_namespace }}"
+  register: k8s_pods
+  changed_when: false
+
+- <<: *task
+  vars:
+    taskid: 63-006
+    name: "Health: Check if a container of service related Pod got recently restarted, eg. OOMKilled | Report restarted Pods"
+    pods_restarted: "{{ k8s_pods | json_query('resources[?status.containerStatuses[?restartCount > `0`]].{name: metadata.name, containerStatuses: status.containerStatuses[].{restartCount: restartCount, startedAt: (state.*.startedAt)[0]}}') }}"  # noqa: yaml[line-length]
+    pods_restarted_last_1d: "{{ pods_restarted | adfinis.maintenance.k8s_workload_pods_restart_last_days(1) }}"
+  ansible.builtin.debug:
+    var: pods_restarted_last_1d
+  changed_when: pods_restarted_last_1d | length > 0
+
+- <<: *task
+  vars:
+    taskid: 63-012
+    name: "Config: Check if all Services are configured as ClusterIP unless necessary | Gather all infos"
+  kubernetes.core.k8s_info:
+    kind: Service
+    namespace: "{{ k8s_workload_namespace }}"
+  register: k8s_services
+  changed_when: false
+
+- <<: *task
+  vars:
+    taskid: 63-012
+    name: "Config: Check if all Services are configured as ClusterIP unless necessary | Check for Services with wrong type"
+    none_cluster_ip_services: "{{ k8s_services | json_query('resources[?spec.type!=`ClusterIP`].{name: metadata.name, type: spec.type}') }}"
+    wrong_type_services: "{{ none_cluster_ip_services | adfinis.maintenance.k8s_workload_check_service_type(k8s_workload_allowed_service_types) }}"
+  ansible.builtin.debug:
+    var: wrong_type_services
+  changed_when: wrong_type_services | length > 0
+
+- <<: *task
+  vars:
+    taskid: 63-013
+    name: "Config: Check that the PullPolicy is not configured to Always | Gather all infos"
+  kubernetes.core.k8s_info:
+    kind: Pod
+    namespace: "{{ k8s_workload_namespace }}"
+  register: k8s_pods
+  changed_when: false
+
+- <<: *task
+  vars:
+    taskid: 63-013
+    name: "Config: Check that the PullPolicy is not configured to Always | Report all faulty PullPolicies"
+    pull_policy_always: "{{ k8s_pods | json_query('resources[?spec.containers[?imagePullPolicy == `Always`] || spec.initContainers[?imagePullPolicy == `Always`]].{name: metadata.name}') }}"  # noqa: yaml[line-length]
+  ansible.builtin.debug:
+    var: pull_policy_always
+  changed_when: pull_policy_always | length > 0
+
+- <<: *task
+  vars:
+    taskid: 63-014
+    name: "Config: Check that the Ingress class is configured with the IngressClass attribute and not as annotation | Gather all infos"
+  kubernetes.core.k8s_info:
+    kind: Ingress
+    namespace: "{{ k8s_workload_namespace }}"
+  register: k8s_ingresses
+  changed_when: false
+
+- <<: *task
+  vars:
+    taskid: 63-014
+    name: "Config: Check that the Ingress class is configured with the IngressClass attribute and not as annotation | Report all faulty Ingresses"
+    ingresses_with_annotation: "{{ k8s_ingresses | json_query('resources[?metadata.annotations.\"kubernetes.io/ingress.class\"].metadata.name') }}"  # noqa: yaml[line-length]
+  ansible.builtin.debug:
+    var: ingresses_with_annotation
+  changed_when: ingresses_with_annotation | length > 0
+
+- <<: *task
+  vars:
+    taskid: 63-015
+    name: "Config: For HA deployments, check if replicas >= 2 for all relevant Deployments/StateFulSets | Gather all infos"
+  kubernetes.core.k8s_info:
+    kind: Deployment
+    namespace: "{{ k8s_workload_namespace }}"
+  register: k8s_deployments
+  changed_when: false
+
+- <<: *task
+  vars:
+    taskid: 63-015
+    name: "Config: For HA deployments, check if replicas >= 2 for all relevant Deployments/StateFulSets | Gather all infos"
+  kubernetes.core.k8s_info:
+    kind: StatefulSet
+    namespace: "{{ k8s_workload_namespace }}"
+  register: k8s_statefullsets
+  changed_when: false
+
+- <<: *task
+  vars:
+    taskid: 63-015
+    name: "Config: For HA deployments, check if replicas >= 2 for all relevant Deployments/StateFulSets | Report Deployments"
+    low_replica_deployments: "{{ k8s_deployments.resources | adfinis.maintenance.k8s_workload_check_low_replicas(k8s_workload_ha_deployments, 2) }}"
+  ansible.builtin.debug:
+    msg: low_replica_statefullsets
+  changed_when: low_replica_deployments | length > 0
+
+- <<: *task
+  vars:
+    taskid: 63-015
+    name: "Config: For HA deployments, check if replicas >= 2 for all relevant Deployments/StateFulSets | Report Deployments"
+    low_replica_statefullsets: "{{ k8s_statefullsets.resources | adfinis.maintenance.k8s_workload_check_low_replicas(k8s_workload_ha_statefulsets, 2) }}"
+  ansible.builtin.debug:
+    var: low_replica_statefullsets
+  changed_when: low_replica_statefullsets | length > 0
+
+- <<: *task
+  vars:
+    taskid: 63-018
+    name: "Config: For HA deployments, check if the HorizontalPodAutoscaler cannot scale below 2 replicas | Gather all infos"
+  kubernetes.core.k8s_info:
+    kind: HorizontalPodAutoscaler
+    namespace: "{{ k8s_workload_namespace }}"
+  register: k8s_hpas
+  changed_when: false
+
+- <<: *task
+  vars:
+    taskid: 63-018
+    name: "Config: For HA deployments, check if the HorizontalPodAutoscaler cannot scale below 2 replicas | Report HPAs"
+    low_replica_hpas: "{{ k8s_hpas | json_query('resources[?spec.minReplicas < `2`].metadata.name') }}"
+  ansible.builtin.debug:
+    var: low_replica_hpas
+  changed_when: low_replica_hpas | length > 0
