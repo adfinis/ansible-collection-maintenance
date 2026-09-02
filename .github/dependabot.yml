@@ -2,8 +2,9 @@
 
 version: 2
 updates:
-  # Maintain GitHub Action dependencies
   - package-ecosystem: "github-actions"
-    directory: "/"
+    directory: "/.github/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+    cooldown:
+      default-days: 7
