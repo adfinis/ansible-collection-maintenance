@@ -7,6 +7,16 @@ dependency:
     role-file: requirements.yml
     requirements-file: requirements.yml
 
+  # create directory structure so molecule can load the collection itself
+  name: shell
+  command: >-
+    mkdir -p ${MOLECULE_EPHEMERAL_DIRECTORY}/collections/ansible_collections/adfinis &&
+    ln -sfn ${PWD} ${MOLECULE_EPHEMERAL_DIRECTORY}/collections/ansible_collections/adfinis/maintenance
+
+provisioner:
+  name: ansible
+
+
 driver:
   name: docker
 
@@ -25,6 +35,7 @@ provisioner:
   env:
     ANSIBLE_FORCE_COLOR: true
     ANSIBLE_ROLES_PATH: "../../../roles"
+    ANSIBLE_COLLECTIONS_PATH: "${MOLECULE_EPHEMERAL_DIRECTORY}/collections"
   config_options:
     defaults:
       retry_files_enabled: false
