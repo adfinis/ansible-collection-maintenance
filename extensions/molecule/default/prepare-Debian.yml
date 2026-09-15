@@ -1,7 +1,7 @@
 ---
 
 - name: Install packages
-  ansible.builtin.apt:
+  ansible.builtin.package:
     name:
       - openssh-server
       - postfix

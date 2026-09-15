@@ -5,12 +5,8 @@
   gather_facts: true
   vars:
     maintenance_exclude_tasks:
-      - 11-020 # Initramfs update
-      - 10-028 # Hard depends on systemd -> Doesn't work yet with centos
-    #  - 10-039
-    #  - 10-041
-    #  - 10-042
-    #  - 10-051  # TODO: remove these!
+      - 11-020  # Initramfs update
+      - 10-028  # Hard depends on systemd -> Doesn't work yet with centos
 
   tasks:
     - name: Include 10_linux
