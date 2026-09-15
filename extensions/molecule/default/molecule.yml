@@ -14,10 +14,6 @@ dependency:
     -p ${MOLECULE_EPHEMERAL_DIRECTORY}/collections
     --force
 
-provisioner:
-  name: ansible
-
-
 driver:
   name: docker
 
