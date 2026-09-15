@@ -27,10 +27,10 @@
       ansible.builtin.command:
         cmd: logrotate /etc/logrotate.conf
 
-    - name: Load distribution version specific tasks
-      ansible.builtin.include_tasks:
-        file: "{{ item }}"
-      with_first_found:
-        - "prepare-{{ ansible_facts.distribution }}{{ ansible_facts.distribution_major_version }}.yml"
-        - "prepare-{{ ansible_facts.distribution }}.yml"
-        - "prepare-empty.yml"
+    - name: SSH working directory
+      ansible.builtin.file:
+        path: /run/sshd
+        state: directory
+        mode: "0755"
+        owner: root
+        group: root

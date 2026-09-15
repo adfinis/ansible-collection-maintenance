@@ -1,9 +1,0 @@
----
-
-- name: SSH working directory
-  ansible.builtin.file:
-    path: /run/sshd
-    state: directory
-    mode: "0755"
-    owner: root
-    group: root
