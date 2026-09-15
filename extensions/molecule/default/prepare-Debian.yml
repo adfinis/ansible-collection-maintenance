@@ -19,7 +19,7 @@
     name: debian-security
     types: deb
     uris: https://security.debian.org/debian-security
-    suites: "{{ ansible_distribution_release }}"
+    suites: "{{ ansible_facts.distribution_release | lower }}"
     components:
       - main
   when:
@@ -27,6 +27,6 @@
 
 - name: Add security repo
   ansible.builtin.apt_repository:
-    repo: "deb https://security.debian.org/debian-security {{ ansible_distribution_release }}/updates main"
+    repo: "deb https://security.debian.org/debian-security {{ ansible_facts.distribution_release | lower }}/updates main"
   when:
     - ansible_facts.distribution_major_version | int <= 11
