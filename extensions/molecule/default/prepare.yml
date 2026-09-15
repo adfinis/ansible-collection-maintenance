@@ -1,0 +1,25 @@
+---
+
+- name: Molecule Prepare
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+      when:
+        - ansible_facts.os_family == "Debian"
+
+    - name: Update dnf cache
+      ansible.builtin.dnf:
+        update_cache: true
+      when:
+        - ansible_facts.os_family == "RedHat"
+
+    - name: Load distribution version specific tasks
+      ansible.builtin.include_tasks:
+        file: "{{ item }}"
+      with_first_found:
+        - "prepare-{{ ansible_facts.distribution }}{{ ansible_facts.distribution_major_version }}.yml"
+        - "prepare-{{ ansible_facts.distribution }}.yml"
+        - "prepare-empty.yml"
