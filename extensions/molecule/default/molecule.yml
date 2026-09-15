@@ -1,12 +1,6 @@
 ---
 
 dependency:
-  name: galaxy
-  options:
-    ignore-errors: true
-    role-file: requirements.yml
-    requirements-file: requirements.yml
-
   # install the local collection so molecule can use the FQCN
   name: shell
   command: >-
