@@ -1,12 +1,5 @@
 ---
 
-- name: Install packages
-  ansible.builtin.package:
-    name:
-      - logrotate
-      - openssh-server
-      - postfix
-
 - name: SSH working directory
   ansible.builtin.file:
     path: /run/sshd
@@ -14,7 +7,3 @@
     mode: "0755"
     owner: root
     group: root
-
-- name: Run logrotate once so status file exists
-  ansible.builtin.command:
-    cmd: logrotate /etc/logrotate.conf

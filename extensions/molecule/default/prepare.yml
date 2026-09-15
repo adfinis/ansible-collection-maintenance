@@ -16,6 +16,17 @@
       when:
         - ansible_facts.os_family == "RedHat"
 
+    - name: Install general packages
+      ansible.builtin.package:
+        name:
+          - logrotate
+          - openssh-server
+          - postfix
+
+    - name: Run logrotate once so status file exists
+      ansible.builtin.command:
+        cmd: logrotate /etc/logrotate.conf
+
     - name: Load distribution version specific tasks
       ansible.builtin.include_tasks:
         file: "{{ item }}"
