@@ -7,11 +7,12 @@ dependency:
     role-file: requirements.yml
     requirements-file: requirements.yml
 
-  # create directory structure so molecule can load the collection itself
+  # install the local collection so molecule can use the FQCN
   name: shell
   command: >-
-    mkdir -p ${MOLECULE_EPHEMERAL_DIRECTORY}/collections/ansible_collections/adfinis &&
-    ln -sfn ${PWD} ${MOLECULE_EPHEMERAL_DIRECTORY}/collections/ansible_collections/adfinis/maintenance
+    ansible-galaxy collection install ${PDW}
+    -p ${MOLECULE_EPHEMERAL_DIRECTORY}/collections
+    --force
 
 provisioner:
   name: ansible
@@ -35,7 +36,7 @@ provisioner:
   env:
     ANSIBLE_FORCE_COLOR: true
     ANSIBLE_ROLES_PATH: "../../../roles"
-    ANSIBLE_COLLECTIONS_PATH: "${MOLECULE_EPHEMERAL_DIRECTORY}/collections"
+    ANSIBLE_COLLECTIONS_PATH: "${MOLECULE_EPHEMERAL_DIRECTORY}/collections:~/.ansible/collections:/usr/share/ansible/collections"
   config_options:
     defaults:
       retry_files_enabled: false
