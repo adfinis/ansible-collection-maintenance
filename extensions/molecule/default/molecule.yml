@@ -10,7 +10,7 @@ dependency:
   # install the local collection so molecule can use the FQCN
   name: shell
   command: >-
-    ansible-galaxy collection install ${PDW}
+    ansible-galaxy collection install ${PWD}/../../
     -p ${MOLECULE_EPHEMERAL_DIRECTORY}/collections
     --force
 
