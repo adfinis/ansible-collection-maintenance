@@ -5,7 +5,8 @@
   gather_facts: true
   vars:
     maintenance_exclude_tasks:
-      - 11-025  # Initramfs update
+      - 11-025  # initramfs update (debian)
+      - 12-020  # initramfs update (ubuntu)
 
   tasks:
     - name: Include 10_linux
