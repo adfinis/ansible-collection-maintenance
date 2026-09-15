@@ -16,11 +16,16 @@
       ansible.builtin.include_role:
         name: maintenance_11_debian
       when:
-        - ansible_facts['os_family'] == "Debian"
+        - ansible_facts.distribution == "Debian"
+
+    - name: Include 12_ubuntu
+      ansible.builtin.include_role:
+        name: maintenance_12_ubuntu
+      when:
+        - ansible_facts.distribution == "Ubuntu"
 
     - name: Include 15_rhel
       ansible.builtin.include_role:
         name: maintenance_15_rhel
       when:
-        - ansible_facts['os_family'] == "RedHat"
-        - ansible_facts['os_family'] != "Suse"
+        - ansible_facts.os_family == "RedHat"
