@@ -3,6 +3,7 @@
 - name: Install packages
   ansible.builtin.package:
     name:
+      - logrotate
       - openssh-server
       - postfix
 
@@ -13,3 +14,7 @@
     mode: "0755"
     owner: root
     group: root
+
+- name: Run logrotate once so status file exists
+  ansible.builtin.command:
+    cmd: logrotate /etc/logrotate.conf
