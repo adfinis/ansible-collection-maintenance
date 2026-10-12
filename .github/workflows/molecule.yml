@@ -1,0 +1,42 @@
+---
+
+name: Ansible Molecule
+on: [push, pull_request]
+
+permissions: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04 # ubuntu latest will for all RHEL-based distros: https://github.com/rocky-linux/sig-cloud-instance-images/issues/56
+    container:
+      image: python:3.14@sha256:b0aed0e0059e9b1527ef57689a7206f32526627b0713e2228a916df62880188a
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - image: "debian11"
+          - image: "debian12"
+          - image: "debian13"
+          - image: "fedora42"
+          - image: "fedora43"
+          - image: "ubuntu2204"
+          - image: "ubuntu2404"
+          - image: "ubuntu2604"
+          - image: "rockylinux8"
+          - image: "rockylinux9"
+        scenario:
+          - default
+    steps:
+      - name: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: "${{ github.repository }}"
+          persist-credentials: false
+
+      - name: molecule
+        uses: gofrolist/molecule-action@f6757af16d4781d4d9c21e93ef593f5fa0895fa5 # v2.9.10
+        with:
+          molecule_working_dir: "${{ github.repository }}/extensions"
+          molecule_args: "-s ${{ matrix.scenario }}"
+        env:
+          image: ${{ matrix.config.image }}
