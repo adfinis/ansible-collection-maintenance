@@ -78,7 +78,7 @@ class CallbackModule(CallbackBase):
         # this plugin breaks with future ansible versions, it's probably the next 3 lines.
         host = result._host.name
         taskid = result._task.vars.get('taskid')
-        taskname = result._task.vars.get('name', '')
+        taskname = result._task.vars.get('task_name', '')
         if taskid is None or taskid == 'ignore-me':
             return
         # Store the "worst" result (max, failed=3, changed=2, ok=1, skipped=0) per host and taskid.

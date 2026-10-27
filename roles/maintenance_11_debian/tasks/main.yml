@@ -3,14 +3,14 @@
 - name: This task only serves as a template for the tasks below
   ansible.builtin.set_fact:
     ignoreme: &task
-      name: "{{ vars.taskid }}: {{ vars.name }}"
+      name: "{{ taskid }}: {{ task_name }}"
       register: task
       when:
-        - "vars.taskid not in maintenance_exclude_tasks"
-        - "maintenance_only is not defined or maintenance_only == vars.taskid"
+        - "taskid not in maintenance_exclude_tasks"
+        - "maintenance_only is not defined or maintenance_only == taskid"
   vars:
     taskid: ignore-me
-    name: bar
+    task_name: bar
 
 - name: Gather apt_sources facts
   adfinis.facts.apt_sources_facts: {}
@@ -18,7 +18,7 @@
 - <<: *task
   vars:
     taskid: 11-010
-    name: "Are the sources.list files setup according to our current standard? | Find legacy sources.list files on Debian 13 and newer"
+    task_name: "Are the sources.list files setup according to our current standard? | Find legacy sources.list files on Debian 13 and newer"
   check_mode: yes
   ansible.builtin.assert:
     that: >-
@@ -35,7 +35,7 @@
 - <<: *task
   vars:
     taskid: 11-011
-    name: "Security: Are the security updates in the sources.list?"
+    task_name: "Security: Are the security updates in the sources.list?"
   check_mode: yes
   ansible.builtin.assert:
     that: >-
@@ -53,7 +53,7 @@
 - <<: *task
   vars:
     taskid: 11-012
-    name: "Repository: Check if repository is set to release name (e.g. 'bullseye') and not to 'stable' | Check all sources.list files"
+    task_name: "Repository: Check if repository is set to release name (e.g. 'bullseye') and not to 'stable' | Check all sources.list files"
     source_entry: "{{ item.1.filename }}: {{ item.1.uri }} {{ item.1.suites }} -> {{ ansible_facts.distribution_release }}"
   check_mode: yes
   ansible.builtin.debug:
@@ -68,7 +68,7 @@
 - <<: *task
   vars:
     taskid: 11-013
-    name: "For old distributions, has the repository been moved to http://archive.debian.org/ already? | Test archive.debian.org"
+    task_name: "For old distributions, has the repository been moved to http://archive.debian.org/ already? | Test archive.debian.org"
   ansible.builtin.uri:
     url: "http://archive.debian.org/debian/dists/{{ ansible_facts.distribution_release }}/Release"
     method: HEAD
@@ -79,7 +79,7 @@
 - <<: *task
   vars:
     taskid: 11-013
-    name: "For old distributions, has the repository been moved to http://archive.debian.org/ already? | grep sources.list"
+    task_name: "For old distributions, has the repository been moved to http://archive.debian.org/ already? | grep sources.list"
   ansible.builtin.assert:
     that: >-
       ansible_facts.apt_sources
@@ -103,7 +103,7 @@
 - <<: *task
   vars:
     taskid: 11-015
-    name: "GPG-Keys: Are there errors because of not existing GPG Keys?"
+    task_name: "GPG-Keys: Are there errors because of not existing GPG Keys?"
   ansible.builtin.shell: apt-get update 2>&1 | grep -e 'Key is stored in legacy trusted.gpg keyring' -e 'GPG error:'  # noqa risky-shell-pipe
   environment:
     LC_ALL: C
@@ -115,7 +115,7 @@
 - <<: *task
   vars:
     taskid: 11-015
-    name: "GPG-Keys: Are there errors because of not existing GPG Keys? | Report errors"
+    task_name: "GPG-Keys: Are there errors because of not existing GPG Keys? | Report errors"
   ansible.builtin.debug:
     var: "debian_apt_update_status.stdout_lines"
   changed_when: "debian_apt_update_status.stdout_lines | length > 0"
@@ -123,7 +123,7 @@
 - <<: *task
   vars:
     taskid: 11-021
-    name: "apt: Update cache and simulate the package upgrade"
+    task_name: "apt: Update cache and simulate the package upgrade"
   ansible.builtin.apt:
     update_cache: yes
     upgrade: safe
@@ -132,7 +132,7 @@
 - <<: *task
   vars:
     taskid: 11-023
-    name: "apt: Remove obsolete packages"
+    task_name: "apt: Remove obsolete packages"
   ansible.builtin.apt:
     autoremove: yes
   check_mode: yes
@@ -140,7 +140,7 @@
 - <<: *task
   vars:
     taskid: 11-024
-    name: "dpkg status: Are there packages with broken installation states? | Get list of matching packages"
+    task_name: "dpkg status: Are there packages with broken installation states? | Get list of matching packages"
   ansible.builtin.shell: dpkg -l | grep -E '^[A-Z]. '  # noqa risky-shell-pipe  never fails
   register: debian_dpkg_status
   check_mode: no
@@ -150,7 +150,7 @@
 - <<: *task
   vars:
     taskid: 11-024
-    name: "dpkg status: Are there packages with broken installation states? | Report matching packages"
+    task_name: "dpkg status: Are there packages with broken installation states? | Report matching packages"
   ansible.builtin.debug:
     var: "debian_dpkg_status.stdout_lines"
   changed_when: "debian_dpkg_status.stdout_lines | length > 0"
@@ -158,13 +158,13 @@
 - <<: *task
   vars:
     taskid: 11-025
-    name: "boot-config: Check boot configuration: update initramfs"
+    task_name: "boot-config: Check boot configuration: update initramfs"
   ansible.builtin.command: update-initramfs -u
   changed_when: no  # only requires human interaction in case of errors
 
 - <<: *task
   vars:
     taskid: 11-025
-    name: "boot-config: Check boot configuration: keep bootloader up to date"
+    task_name: "boot-config: Check boot configuration: keep bootloader up to date"
   ansible.builtin.command: update-grub
   changed_when: no  # only requires human interaction in case of errors

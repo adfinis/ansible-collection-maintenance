@@ -3,14 +3,14 @@
 - name: This task only serves as a template for the tasks below
   ansible.builtin.set_fact:
     ignoreme: &task
-      name: "{{ vars.taskid }}: {{ vars.name }}"
+      name: "{{ taskid }}: {{ task_name }}"
       register: task
       when:
-        - "vars.taskid not in maintenance_exclude_tasks"
-        - "maintenance_only is not defined or maintenance_only == vars.taskid"
+        - "taskid not in maintenance_exclude_tasks"
+        - "maintenance_only is not defined or maintenance_only == taskid"
   vars:
     taskid: ignore-me
-    name: bar
+    task_name: bar
 
 - name: Load release-specific variables
   ansible.builtin.include_vars: "{{ item }}"
@@ -20,7 +20,7 @@
 - <<: *task
   vars:
     taskid: 15-010
-    name: "Does the system get updates (are the base repos enabled)"
+    task_name: "Does the system get updates (are the base repos enabled)"
   check_mode: yes  # We only want to know about changes, not actually apply them
   community.general.ini_file:  # noqa risky-file-permissions  only checking, not creating
     path: /etc/yum.repos.d/local.repo
@@ -32,7 +32,7 @@
 - <<: *task
   vars:
     taskid: 15-011
-    name: "Does yum check-update work"
+    task_name: "Does yum check-update work"
   ansible.builtin.command: "yum check-update -q"
   timeout: 300  # seconds
   register: yum_checkupdate_output
@@ -43,7 +43,7 @@
 - <<: *task
   vars:
     taskid: 15-011
-    name: "Does yum check-update work | Show exit status"
+    task_name: "Does yum check-update work | Show exit status"
   ansible.builtin.debug:
     msg: "Exited with: {{ yum_checkupdate_output.rc }}, Error is: {{ yum_checkupdate_output.stderr_lines | default('Not available') }}"
   changed_when: "yum_checkupdate_output.rc not in [0, 100]"
@@ -51,7 +51,7 @@
 - <<: *task
   vars:
     taskid: 15-013
-    name: "Is selinux switched on"
+    task_name: "Is selinux switched on"
   check_mode: yes  # We only want to know about changes, not actually apply them
   ansible.posix.selinux:
     policy: targeted
@@ -60,7 +60,7 @@
 - <<: *task
   vars:
     taskid: 15-014
-    name: "Scan the audit log for issues | gather logs"
+    task_name: "Scan the audit log for issues | gather logs"
   ansible.builtin.command: ausearch -m AVC
   register: audit_log_output
   check_mode: no
@@ -70,7 +70,7 @@
 - <<: *task
   vars:
     taskid: 15-014
-    name: "Scan the audit log for issues | output"
+    task_name: "Scan the audit log for issues | output"
   ansible.builtin.debug:
     var: "audit_log_output.stdout_lines"
   changed_when: "audit_log_output.stdout_lines | length > 0"

@@ -1,12 +1,8 @@
 ---
 
 skip_list:
-  # ansible-lint doesn't like the way we're templating task names
-  - name[template]
   # When we use command, we do so because the corresponding module is insufficient
   - command-instead-of-module
-  # ansible-lint doesn't like us using vars. as a prefix for templating variables and wants us to prefix the rolename for variables. But we're using global variables not specific to a role
-  - var-naming
   # The commits are the changelog
   - galaxy[no-changelog]
   # We're not 1.0.0 yet and that's ok

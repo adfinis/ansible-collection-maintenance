@@ -2,19 +2,19 @@
 - name: This task only serves as a template for the tasks below
   ansible.builtin.set_fact:
     ignoreme: &task
-      name: "{{ vars.taskid }}: {{ vars.name }}"
+      name: "{{ taskid }}: {{ task_name }}"
       register: task
       when:
-        - "vars.taskid not in maintenance_exclude_tasks"
-        - "maintenance_only is not defined or maintenance_only == vars.taskid"
+        - "taskid not in maintenance_exclude_tasks"
+        - "maintenance_only is not defined or maintenance_only == taskid"
   vars:
     taskid: ignore-me
-    name: bar
+    task_name: bar
 
 - <<: *task
   vars:
     taskid: 31-010
-    name: "Logrotate: Is there a working logrotate for all Nginx Logs"
+    task_name: "Logrotate: Is there a working logrotate for all Nginx Logs"
   ansible.builtin.shell:
     cmd: "nginx -T | awk '/log/ {print $2}' | rev | awk '{sub(/;/,\"\")}1' | rev"
   register: nginx_log_files
@@ -24,7 +24,7 @@
 - <<: *task
   vars:
     taskid: 31-010
-    name: "Logrotate: Is there a working logrotate for all Nginx Logs | large files"
+    task_name: "Logrotate: Is there a working logrotate for all Nginx Logs | large files"
   ansible.builtin.find:
     paths: "{{ nginx_log_files.stdout_lines }}"
     size: 16m
@@ -35,7 +35,7 @@
 - <<: *task
   vars:
     taskid: 31-010
-    name: "Logrotate: Is there a working logrotate for all Nginx Logs | large files"
+    task_name: "Logrotate: Is there a working logrotate for all Nginx Logs | large files"
   ansible.builtin.stat:
     path: "{{ item }}"
     get_attributes: false
@@ -48,7 +48,7 @@
 - <<: *task
   vars:
     taskid: 31-010
-    name: "Logrotate: Is there a working logrotate for all Nginx Logs | large files"
+    task_name: "Logrotate: Is there a working logrotate for all Nginx Logs | large files"
     nginx_large_files: "{{ nginx_large_logfiles_stat.results | map(attribute='stat') | selectattr('blocks', 'gt', 4096) | map(attribute='path') | list }}"
   ansible.builtin.debug:
     var: "nginx_large_files"
@@ -58,7 +58,7 @@
 - <<: *task
   vars:
     taskid: 31-011
-    name: "Error: Are there any problematic messages in the error logs"
+    task_name: "Error: Are there any problematic messages in the error logs"
   ansible.builtin.debug:
     msg: "Please double check error logs for important error messages -> {{  nginx_log_files.stdout_lines | default([]) | join(', ') }}"
   changed_when: true
@@ -66,7 +66,7 @@
 - <<: *task
   vars:
     taskid: 31-014
-    name: "SSL: If in use, will SSL certificate be valid in a month"
+    task_name: "SSL: If in use, will SSL certificate be valid in a month"
   ansible.builtin.shell:
     cmd: "nginx -T | awk '/ssl_certificate[^_]/ {print $2}' | rev | awk '{sub(/;/,\"\")}1' | rev"
   register: nginx_cert_files
@@ -76,7 +76,7 @@
 - <<: *task
   vars:
     taskid: 31-014
-    name: "SSL: If in use, will SSL certificate be valid in a month"
+    task_name: "SSL: If in use, will SSL certificate be valid in a month"
   ansible.builtin.slurp:
     src: "{{ item }}"
   loop: "{{ nginx_cert_files.stdout_lines }}"
@@ -87,7 +87,7 @@
 - <<: *task
   vars:
     taskid: 31-014
-    name: "SSL_ If in use, will SSL certificate be valid in a month"
+    task_name: "SSL_ If in use, will SSL certificate be valid in a month"
   community.crypto.x509_certificate_info:
     content: "{{ item }}"
     valid_at:
@@ -106,12 +106,12 @@
 - <<: *task
   vars:
     taskid: 31-014
-    name: "SSL: If in use, will SSL certificate be valid in a month"
+    task_name: "SSL: If in use, will SSL certificate be valid in a month"
   ansible.builtin.debug:
     msg: "{{ item.not_after }}: {{ item.subject }}"
   when:
-    - "vars.taskid not in maintenance_exclude_tasks"
-    - "maintenance_only is not defined or maintenance_only == vars.taskid"
+    - "taskid not in maintenance_exclude_tasks"
+    - "maintenance_only is not defined or maintenance_only == taskid"
     - not (item.valid_at.one_month_later | default(true))
   changed_when: true
   loop: "{{ nginx_cert_info.results }}"

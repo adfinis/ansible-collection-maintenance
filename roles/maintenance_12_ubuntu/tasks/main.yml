@@ -3,20 +3,20 @@
 - name: This task only serves as a template for the tasks below
   ansible.builtin.set_fact:
     ignoreme: &task
-      name: "{{ vars.taskid }}: {{ vars.name }}"
+      name: "{{ taskid }}: {{ task_name }}"
       register: task
       when:
-        - "vars.taskid not in maintenance_exclude_tasks"
-        - "maintenance_only is not defined or maintenance_only == vars.taskid"
+        - "taskid not in maintenance_exclude_tasks"
+        - "maintenance_only is not defined or maintenance_only == taskid"
   vars:
     taskid: ignore-me
-    name: bar
+    task_name: bar
 
 # (12-010) Update package lists and check for errors `apt update`
 - <<: *task
   vars:
     taskid: 12-010
-    name: "Update package lists and check for errors `apt update`"
+    task_name: "Update package lists and check for errors `apt update`"
   ansible.builtin.apt:
     update_cache: yes
   changed_when: no
@@ -26,7 +26,7 @@
 - <<: *task
   vars:
     taskid: 12-012
-    name: "dpkg status: Are there packages which do not have the dpkg status ii or hi? | Get list of matching packages"
+    task_name: "dpkg status: Are there packages which do not have the dpkg status ii or hi? | Get list of matching packages"
   ansible.builtin.shell: dpkg -l | tail -n +6 | grep -vE '^[hi]i'  # noqa risky-shell-pipe  never fails
   register: ubuntu_dpkg_status
   check_mode: no
@@ -36,7 +36,7 @@
 - <<: *task
   vars:
     taskid: 12-012
-    name: "dpkg status: Are there packages which do not have the dpkg status ii or hi? | Report matching packages"
+    task_name: "dpkg status: Are there packages which do not have the dpkg status ii or hi? | Report matching packages"
   ansible.builtin.debug:
     var: "ubuntu_dpkg_status.stdout_lines"
   changed_when: "ubuntu_dpkg_status.stdout_lines | length > 0"
@@ -46,7 +46,7 @@
 - <<: *task
   vars:
     taskid: 12-017
-    name: "apt: Simulate the package upgrade"
+    task_name: "apt: Simulate the package upgrade"
   ansible.builtin.apt:
     update_cache: yes
     upgrade: safe
@@ -57,7 +57,7 @@
 - <<: *task
   vars:
     taskid: 12-019
-    name: "apt: Remove obsolete packages"
+    task_name: "apt: Remove obsolete packages"
   ansible.builtin.apt:
     autoremove: yes
   check_mode: yes
@@ -66,21 +66,21 @@
 - <<: *task
   vars:
     taskid: 12-020
-    name: "boot-config: Check boot configuration: update initramfs"
+    task_name: "boot-config: Check boot configuration: update initramfs"
   ansible.builtin.command: update-initramfs -u
   changed_when: no  # only requires human interaction in case of errors
 
 - <<: *task
   vars:
     taskid: 12-020
-    name: "boot-config: Check boot configuration: keep bootloader up to date"
+    task_name: "boot-config: Check boot configuration: keep bootloader up to date"
   ansible.builtin.command: update-grub
   changed_when: no  # only requires human interaction in case of errors
 
 - <<: *task
   vars:
     taskid: 10-061
-    name: "Updates: Check if a major update is pending. | Update Ubuntu distribution info"
+    task_name: "Updates: Check if a major update is pending. | Update Ubuntu distribution info"
   ansible.builtin.apt:
     name:
       - distro-info
@@ -92,7 +92,7 @@
 - <<: *task
   vars:
     taskid: 10-061
-    name: "Updates: Check if a major update is pending. | Check release name against LTS"
+    task_name: "Updates: Check if a major update is pending. | Check release name against LTS"
   ansible.builtin.command: distro-info --{{ ubuntu_release_train }}
   changed_when:
     - "ansible_facts.distribution_release not in task.stdout_lines"
