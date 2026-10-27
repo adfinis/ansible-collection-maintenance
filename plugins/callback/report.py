@@ -58,7 +58,7 @@ class CallbackModule(CallbackBase):
     """
     Print Markdown checklists indicating which tasks require human interaction.
     """
-    CALLBACK_VERSION = 2.0
+    CALLBACK_VERSION = 3.0
     CALLBACK_TYPE = 'aggregate'
     CALLBACK_NAME = 'adfinis.maintenance.report'
 
@@ -76,9 +76,9 @@ class CallbackModule(CallbackBase):
         # Extract the task information from the TaskResult.
         # Unfortunately, some protected members need to be accessed to get the information we need.  If something in
         # this plugin breaks with future ansible versions, it's probably the next 3 lines.
-        host = result._host.name
-        taskid = result._task.vars.get('taskid')
-        taskname = result._task.vars.get('task_name', '')
+        host = result.host.get_name()
+        taskid = result.task.vars.get('taskid')
+        taskname = result.task.vars.get('task_name', '')
         if taskid is None or taskid == 'ignore-me':
             return
         # Store the "worst" result (max, failed=3, changed=2, ok=1, skipped=0) per host and taskid.
