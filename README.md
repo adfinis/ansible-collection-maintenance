@@ -83,7 +83,6 @@ Check out `roles/maintenance_*/defaults/main.yml` to see which options can be ov
 [defaults]
 display_skipped_hosts=no
 display_ok_hosts=no
-callback_whitelist=adfinis.maintenance.report
 callbacks_enabled=adfinis.maintenance.report
 duplicate_dict_key=ignore
 inject_facts_as_vars=no

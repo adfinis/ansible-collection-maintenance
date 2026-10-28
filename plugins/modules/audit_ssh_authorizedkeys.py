@@ -156,8 +156,7 @@ def run_module():
         supports_check_mode=True,
     )
 
-    warnings = []
-
+    warnings = 0
     getent_backends = []
     # Check NSS passwd db backends against list of limited backends, and emit warnings if additional backends are present
     with open('/etc/nsswitch.conf', 'r') as nssf:
@@ -175,7 +174,8 @@ def run_module():
                 elif backend not in module.params['ignore_nss_backends']:
                     msg = 'Users from the NSS passwd backend "{}" are excluded from this check. '.format(backend) + \
                         'Please audit manually or include the backend in either limit_nss_backends or ignore_nss_backends'
-                    warnings.append(msg)
+                    warnings += 1
+                    module.warn(msg)
 
     # Get user homes
     users = set()
@@ -214,7 +214,8 @@ def run_module():
                 conf = cline.split(None, 1)
                 if conf[0] == 'authorizedkeyscommand' and conf[1] != 'none':
                     msg = 'AuthorizedKeysCommand is configured: "{}". Keys returned by this command are not audited.'.format(conf[1])
-                    warnings.append(msg)
+                    warnings += 1
+                    module.warn(msg)
                 elif conf[0] == 'authorizedkeysfile':
                     authorized_keys_paths = conf[1].split()
 
@@ -285,13 +286,13 @@ def run_module():
                 'after_header': 'authorized_keys ({})'.format(user),
             })
 
-    if len(violations) > 0 or len(warnings) > 0:
+    if len(violations) > 0 or warnings > 0:
         result['changed'] = True
         if not module.check_mode:
-            module.fail_json(warnings=warnings, msg=violations, **result)
+            module.fail_json(msg=violations, **result)
     # in the event of a successful module execution, you will want to
     # simple AnsibleModule.exit_json(), passing the key/value results
-    module.exit_json(warnings=warnings, **result)
+    module.exit_json(**result)
 
 
 def main():

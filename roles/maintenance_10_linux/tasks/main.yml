@@ -3,14 +3,14 @@
 - name: This task only serves as a template for the tasks below
   ansible.builtin.set_fact:
     ignoreme: &task
-      name: "{{ vars.taskid }}: {{ vars.name }}"
+      name: "{{ taskid }}: {{ task_name }}"
       register: task
       when:
-        - "vars.taskid not in maintenance_exclude_tasks"
-        - "maintenance_only is not defined or maintenance_only == vars.taskid"
+        - "taskid not in maintenance_exclude_tasks"
+        - "maintenance_only is not defined or maintenance_only == taskid"
   vars:
     taskid: ignore-me
-    name: bar
+    task_name: bar
 
 - name: Include OS-specific vars
   ansible.builtin.include_vars: "{{ item }}"
@@ -33,7 +33,7 @@
 - <<: *task
   vars:
     taskid: 10-017
-    name: "Fstab: fstab correct? | Run findmnt --verify --verbose"
+    task_name: "Fstab: fstab correct? | Run findmnt --verify --verbose"
   environment:
     LC_ALL: C
   ansible.builtin.command: "findmnt --verify --verbose"
@@ -45,7 +45,7 @@
 - <<: *task
   vars:
     taskid: 10-017
-    name: "Fstab: fstab correct? | Report findmnt results"
+    task_name: "Fstab: fstab correct? | Report findmnt results"
   ansible.builtin.debug:
     var: "linux_mount_all.stdout_lines"
   changed_when: "'Success, no errors or warnings detected' not in linux_mount_all.stdout_lines"
@@ -53,13 +53,13 @@
 - <<: *task
   vars:
     taskid: 10-028
-    name: "Systemd: Check all important service units | Gather systemd unit facts"
+    task_name: "Systemd: Check all important service units | Gather systemd unit facts"
   ansible.builtin.service_facts: {}
 
 - <<: *task
   vars:
     taskid: 10-028
-    name: "Systemd: Check all important service units | Check for failed units"
+    task_name: "Systemd: Check all important service units | Check for failed units"
     failed_units: "{{ ansible_facts.services.items() | map(attribute=1) | selectattr('state', '==', 'failed') | map(attribute='name') | list }}"
   ansible.builtin.debug:
     var: failed_units
@@ -68,7 +68,7 @@
 - <<: *task
   vars:
     taskid: 10-034
-    name: "logrotate: Are all files in /var/log managed by logrotate? | Read status file"
+    task_name: "logrotate: Are all files in /var/log managed by logrotate? | Read status file"
   ansible.builtin.slurp:
     src: "{{ linux_logrotate_status_file }}"
   register: logrotate_output
@@ -76,14 +76,14 @@
 - <<: *task
   vars:
     taskid: 10-034
-    name: "Logrotate: Are all files in /var/log managed by logrotate? | Extract file list from status file"
+    task_name: "Logrotate: Are all files in /var/log managed by logrotate? | Extract file list from status file"
   ansible.builtin.set_fact:
     logrotate_logs: "{{ logrotate_output.content | b64decode | split('\n') | map('split',' ') | map('first') |map('trim', '\"') | list }}"
 
 - <<: *task
   vars:
     taskid: 10-034
-    name: "Logrotate: Are there files in /var/log that are not rotated? | List all files in /var/log."
+    task_name: "Logrotate: Are there files in /var/log that are not rotated? | List all files in /var/log."
   adfinis.maintenance.find:
     paths: /var/log
     xdev: true
@@ -96,14 +96,14 @@
 - <<: *task
   vars:
     taskid: 10-034
-    name: "Logrotate: Are there files in /var/log that are not rotated? | Compare file lists"
+    task_name: "Logrotate: Are there files in /var/log that are not rotated? | Compare file lists"
   ansible.builtin.set_fact:
     unmanaged_logs: "{{ all_logs.found | reject('in', logrotate_logs) | list }}"
 
 - <<: *task
   vars:
     taskid: 10-034
-    name: "Logrotate: list all files in /var/log that are not rotated."
+    task_name: "Logrotate: list all files in /var/log that are not rotated."
   ansible.builtin.debug:
     msg: "List of logs not managed by logrotate: \n{% for item in unmanaged_logs %}{{ item + '\n'}}{% endfor %}"
   changed_when: "unmanaged_logs | length > 0"
@@ -111,7 +111,7 @@
 - <<: *task
   vars:
     taskid: 10-037
-    name: "Logfiles: Are there large files that point to a too verbose service? | Find large files in /var/log"
+    task_name: "Logfiles: Are there large files that point to a too verbose service? | Find large files in /var/log"
   adfinis.maintenance.find:
     paths:
       - /var/log
@@ -126,7 +126,7 @@
 - <<: *task
   vars:
     taskid: 10-037
-    name: "Logfiles: Are there large files that point to a too verbose service? | Stat found files in /var/log"
+    task_name: "Logfiles: Are there large files that point to a too verbose service? | Stat found files in /var/log"
   ansible.builtin.stat:
     path: "{{ item }}"
     get_attributes: false
@@ -139,7 +139,7 @@
 - <<: *task
   vars:
     taskid: 10-037
-    name: "Logfiles: Are there large log files that point to a too verbose service? | Report large files in /var/log"
+    task_name: "Logfiles: Are there large log files that point to a too verbose service? | Report large files in /var/log"
     # assuming 4k logical blocksize, which is to be expected nowadays
     large_files: "{{ linux_large_logfiles_stat.results | map(attribute='stat') | selectattr('blocks', 'gt', (linux_allowed_large_logfiles_maxsize_mb * 1024 / 4 | int)) | map(attribute='path') | list }}"
   ansible.builtin.debug:
@@ -150,7 +150,7 @@
 - <<: *task
   vars:
     taskid: 10-037
-    name: "Logfiles: Are there large log files that point to a too verbose service? | Find large, recently changed files outside /var/log"
+    task_name: "Logfiles: Are there large log files that point to a too verbose service? | Find large, recently changed files outside /var/log"
   adfinis.maintenance.find:
     paths: "{{ ansible_facts.mounts | map(attribute='mount') | list }}"
     prune: "{{ linux_large_logfiles_prune + linux_additional_large_logfiles_prune }}"
@@ -165,7 +165,7 @@
 - <<: *task
   vars:
     taskid: 10-037
-    name: "Logfiles: Are there large log files that point to a too verbose service? | Report all large possible log files"
+    task_name: "Logfiles: Are there large log files that point to a too verbose service? | Report all large possible log files"
     large_files: "{{ linux_list_large_logfiles.large_files + linux_large_files_outside.found | list }}"
   ansible.builtin.debug:
     var: "large_files"
@@ -174,7 +174,7 @@
 - <<: *task
   vars:
     taskid: 10-039
-    name: "Logfiles: Does journald log to persistent storage? | Check for journal of previous boot"
+    task_name: "Logfiles: Does journald log to persistent storage? | Check for journal of previous boot"
   ansible.builtin.command: journalctl -b -1 -n +1
   register: linux_system_journal_prev_boot
   changed_when: false
@@ -183,7 +183,7 @@
 - <<: *task
   vars:
     taskid: 10-039
-    name: "Logfiles: Does journald log to persistent storage? | Report age of system journal on error"
+    task_name: "Logfiles: Does journald log to persistent storage? | Report age of system journal on error"
   ansible.builtin.debug:
     msg: |
       Journal from previous boot not available. Please check if persistency is configured and SystemMaxUse limit not reached.
@@ -193,7 +193,7 @@
 - <<: *task
   vars:
     taskid: 10-042
-    name: "Security: SSH keys: Check for unknown or outdated keys for root and all users"
+    task_name: "Security: SSH keys: Check for unknown or outdated keys for root and all users"
   adfinis.maintenance.audit_ssh_authorizedkeys:
     allowed: "{{ linux_allowed_ssh_authorized_keys + linux_additional_ssh_authorized_keys }}"
     limit_nss_backends: "{{ linux_allowed_ssh_nss_backends }}"
@@ -203,26 +203,26 @@
 - <<: *task
   vars:
     taskid: 10-050
-    name: "Mail: serverlogs: Is serverlogs@ entered in /etc/aliases for root?"
+    task_name: "Mail: serverlogs: Is serverlogs@ entered in /etc/aliases for root?"
   ansible.builtin.lineinfile:
     path: /etc/aliases
     regexp: "^root:"
     line: "root: {{ linux_serverlogs_root_alias }}"
     insertbefore: EOF
   when:
-    - "vars.taskid not in maintenance_exclude_tasks"
-    - "maintenance_only is not defined or maintenance_only == vars.taskid"
+    - "taskid not in maintenance_exclude_tasks"
+    - "maintenance_only is not defined or maintenance_only == taskid"
     - "'postfix' in ansible_facts.packages"
   check_mode: true
 
 - <<: *task
   vars:
     taskid: 10-051
-    name: "Mail: aliases.db: Make sure /etc/aliases.db is up to date"
+    task_name: "Mail: aliases.db: Make sure /etc/aliases.db is up to date"
   ansible.builtin.shell: "[ -f /etc/aliases ] && postalias /etc/aliases || exit 2"
   when:
-    - "vars.taskid not in maintenance_exclude_tasks"
-    - "maintenance_only is not defined or maintenance_only == vars.taskid"
+    - "taskid not in maintenance_exclude_tasks"
+    - "maintenance_only is not defined or maintenance_only == taskid"
     - "'postfix' in ansible_facts.packages"
   changed_when: "task.rc == 2"  # rc == 2 => file doesn't exist
   failed_when: "task.rc == 1"  # rc == 1 => postalias failed

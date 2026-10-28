@@ -2,14 +2,14 @@
 - name: This task only serves as a template for the tasks below
   ansible.builtin.set_fact:
     ignoreme: &task
-      name: "{{ vars.taskid }}: {{ vars.name }}"
+      name: "{{ taskid }}: {{ task_name }}"
       register: task
       when:
-        - "vars.taskid not in maintenance_exclude_tasks"
-        - "maintenance_only is not defined or maintenance_only == vars.taskid"
+        - "taskid not in maintenance_exclude_tasks"
+        - "maintenance_only is not defined or maintenance_only == taskid"
   vars:
     taskid: ignore-me
-    name: bar
+    task_name: bar
 
 # Include OS specific vars to get binary name: apache_binary_name, httpd or apache2
 - name: "Apache: Gather details, set vars: set apache binary based on OS"
@@ -141,7 +141,7 @@
 - <<: *task
   vars:
     taskid: 32-010
-    name: "Apache: Are there files in the apache log dir that are not rotated? | Find large files"
+    task_name: "Apache: Are there files in the apache log dir that are not rotated? | Find large files"
   ansible.builtin.stat:
     path: "{{ item }}"
     get_attributes: false
@@ -154,7 +154,7 @@
 - <<: *task
   vars:
     taskid: 32-010
-    name: "Apache: Are there files in the apache log dir that are not rotated? | Find large files"
+    task_name: "Apache: Are there files in the apache log dir that are not rotated? | Find large files"
     # 4096 blocks equals 16M (assuming 4k logical blocksize, which is to be expected nowadays)
     apache_large_files: "{{ apache_large_logfiles_stat.results | map(attribute='stat') | selectattr('blocks', 'gt', 4096) | map(attribute='path') | list }}"
   ansible.builtin.debug:
@@ -165,7 +165,7 @@
 - <<: *task
   vars:
     taskid: 32-012
-    name: "Apache: Check apache configuration validity"
+    task_name: "Apache: Check apache configuration validity"
   ansible.builtin.command: "{{ apache_binary_path }} -t"
   register: apache_config_test
   changed_when: "apache_config_test.rc != 0"
@@ -174,7 +174,7 @@
 - <<: *task
   vars:
     taskid: 32-014
-    name: Test whether that certificate is valid in a month
+    task_name: Test whether that certificate is valid in a month
   ansible.builtin.slurp:
     src: "{{ item }}"
   register: apache_cert_files_content
@@ -184,7 +184,7 @@
 - <<: *task
   vars:
     taskid: 32-014
-    name: Test whether that certificate is valid in a month
+    task_name: Test whether that certificate is valid in a month
   community.crypto.x509_certificate_info:
     content: "{{ item }}"
     valid_at:
@@ -203,7 +203,7 @@
 - <<: *task
   vars:
     taskid: 32-014
-    name: Test whether that certificate is valid in a month
+    task_name: Test whether that certificate is valid in a month
   ansible.builtin.debug:
     msg: "{{ item.not_after }}: {{ item.subject }}"
   loop: "{{ apache_cert_info.results }}"
@@ -225,7 +225,7 @@
 - <<: *task
   vars:
     taskid: 32-011
-    name: "Apache: Are there any problematic messages in the error logs?"
+    task_name: "Apache: Are there any problematic messages in the error logs?"
   ansible.builtin.debug:
     msg:
       - "Please double check error logs for important error messages -> apache log paths: {{ apache_log_files if apache_log_files is defined else 'Not defined' }}"
