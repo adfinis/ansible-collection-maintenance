@@ -1,0 +1,32 @@
+---
+
+- name: Converge
+  hosts: all
+  gather_facts: true
+  vars:
+    maintenance_exclude_tasks:
+      - 11-025  # initramfs update (debian)
+      - 12-020  # initramfs update (ubuntu)
+
+  tasks:
+    - name: Include 10_linux
+      ansible.builtin.include_role:
+        name: maintenance_10_linux
+
+    - name: Include 11_debian
+      ansible.builtin.include_role:
+        name: maintenance_11_debian
+      when:
+        - ansible_facts.distribution == "Debian"
+
+    - name: Include 12_ubuntu
+      ansible.builtin.include_role:
+        name: maintenance_12_ubuntu
+      when:
+        - ansible_facts.distribution == "Ubuntu"
+
+    - name: Include 15_rhel
+      ansible.builtin.include_role:
+        name: maintenance_15_rhel
+      when:
+        - ansible_facts.os_family == "RedHat"

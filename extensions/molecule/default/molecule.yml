@@ -1,0 +1,52 @@
+---
+
+dependency:
+  # install the local collection so molecule can use the FQCN
+  name: shell
+  command: >-
+    ansible-galaxy collection install ${PWD}/../../
+    -p ${MOLECULE_EPHEMERAL_DIRECTORY}/collections
+    --force
+
+driver:
+  name: docker
+
+platforms:
+  - name: "maintenance-${image:-debian13}${TOX_ENVNAME}"
+    image: "geerlingguy/docker-${image:-debian13}-ansible:latest"
+    command: "/sbin/init"
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    privileged: true
+    cgroupns_mode: host
+    pre_build_image: true
+
+provisioner:
+  name: ansible
+  env:
+    ANSIBLE_FORCE_COLOR: true
+    ANSIBLE_ROLES_PATH: "../../../roles"
+    ANSIBLE_COLLECTIONS_PATH: "${MOLECULE_EPHEMERAL_DIRECTORY}/collections:~/.ansible/collections:/usr/share/ansible/collections"
+  config_options:
+    defaults:
+      retry_files_enabled: false
+      callbacks_enabled: "adfinis.maintenance.report"
+      duplicate_dict_key: ignore
+      inject_facts_as_vars: false
+
+verifier:
+  name: ansible
+
+scenario:
+  test_sequence:
+    - dependency
+    - cleanup
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    - side_effect
+    - verify
+    - cleanup
+    - destroy
